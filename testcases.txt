@@ -20,3 +20,13 @@ and x15, x21, x14
 or x16, x21, x14
 LOADNOC x16, x14, 4
 STORENOC
+lui x5, 17
+auipc x8, 12
+jal x4, 0
+jalr x8, 2(x0)
+beq x6, x30, 16
+bne x2, x1, 2
+blt x3, x5, 4
+bge x7, x6, 4
+bltu x23, x12, 6
+bgeu x14, x11, 2
