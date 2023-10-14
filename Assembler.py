@@ -210,9 +210,8 @@ for Inst in Instructions:
         imm = Decimal_Binary(int(Inst[2]), 20)
 
         res = res[0:7]  + Decimal_Binary_Register(rd, 5) + res[12:32]
-        print(res)
         res = res[0:12] + imm
-        print(res)
+        
     elif type in UJ: 
         rd  = int(Inst[1][1:])   
         imm = Decimal_Binary(int(Inst[2]), 21)
