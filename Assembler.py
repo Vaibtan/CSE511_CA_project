@@ -69,7 +69,7 @@ def Decimal_Binary(num, bits):
         
         res = result
     
-    return res
+    return res[::-1]
         
 
 def Decimal_Binary_Register(num, bits):
@@ -86,7 +86,7 @@ def Decimal_Binary_Register(num, bits):
         diff = bits - len(res)
         res = "0" * diff + res
     
-    return res
+    return res[::-1]
 
     
 U =  {"LUI", "AUIPC"}
@@ -146,8 +146,6 @@ Template = {
     "AND"    :   "0000000" + "0"*10 + "111" + "0"*5 + "0110011",
 }
 
-#print(Registers)
-
 for Inst in Template:
     Template[Inst] = Template[Inst][::-1]
 
@@ -156,32 +154,23 @@ Instructions = Read_Input()
 Binary_Instructions = []
 
 for Inst in Instructions:
-    type = Inst[0]               #This gives the type of instruction
+    type = Inst[0].upper()         #Temporary Fix      #This gives the type of instruction
 
     res = Template[type]
     if type in R:
-        print(len(res))
-        print(res)
 
         rd  = int(Inst[1][1:])      #Reads the integer in rs1, rs2, etc. to determine register number
         rs1 = int(Inst[2][1:])
         rs2 = int(Inst[3][1:])    
 
         res = res[0:7]  + Decimal_Binary_Register(rd, 5) + res[12:32]
-        print(res)
-        print(Decimal_Binary_Register(rd, 5))
         res = res[0:15] + Decimal_Binary_Register(rs1, 5) + res[20:32]
-        print(res)
-        print(Decimal_Binary(rs1, 5))
         res = res[0:20] + Decimal_Binary_Register(rs2, 5) + res[25:32]
-        print(res)
-        print(Decimal_Binary_Register(rs2, 5))
 
     elif type in I:
         rd  = int(Inst[1][1:])      
         rs1 = int(Inst[2][1:])
 
-        print(res)
 
         res = res[0:7]  + Decimal_Binary_Register(rd, 5) + res[12:32]
         res = res[0:15] + Decimal_Binary_Register(rs1, 5) + res[20:32]
@@ -192,8 +181,6 @@ for Inst in Instructions:
         else:
             imm = int(Inst[3])
             res = res[0:20]  + Decimal_Binary(imm, 12)
-        
-        print(res)
 
 
     elif type in S:
@@ -207,10 +194,10 @@ for Inst in Instructions:
         res = res[0:25] + imm[5:12] 
     
 
-    elif type in SB: #FIXED but needs testing
+    elif type in SB:
         rs1 = int(Inst[1][1:]) 
         rs2 = int(Inst[2][1:])
-        imm = Decimal_Binary(int(Inst[3]), 13) # imm is 13 bits?
+        imm = Decimal_Binary(int(Inst[3]), 13)
 
         res = res[0:15] + Decimal_Binary_Register(rs1, 5) + res[20:32]
         res = res[0:20] + Decimal_Binary_Register(rs2, 5) + res[25:32] 
@@ -218,15 +205,17 @@ for Inst in Instructions:
         res = res[0:25] + imm[5:11] + imm[12]
 
     elif type in U: 
+        print(res)
         rd  = int(Inst[1][1:])   
         imm = Decimal_Binary(int(Inst[2]), 20)
 
         res = res[0:7]  + Decimal_Binary_Register(rd, 5) + res[12:32]
-        res = res[0:12] + imm[12:32]
-
-    elif type in UJ:  #FIXED but needs testing
+        print(res)
+        res = res[0:12] + imm
+        print(res)
+    elif type in UJ: 
         rd  = int(Inst[1][1:])   
-        imm = Decimal_Binary(int(Inst[2]), 20)
+        imm = Decimal_Binary(int(Inst[2]), 21)
         
         res = res[0:7]  + Decimal_Binary_Register(rd, 5) + res[12:32]
         res = res[0:12] + imm[12:20] + imm[11] + imm[1:11] + imm[20]
