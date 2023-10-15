@@ -19,7 +19,7 @@ u32 cpu_fetch(RISCV_cpu *cpu) {
     return inst;
 }
 
-u64 cpu_ld(RISCV_cpu* cpu, u64 addr, uint64_t size) {
+u64 cpu_ld(RISCV_cpu* cpu, u64 addr, u64 size) {
     return mem_bus_ld(&(cpu->__bus), addr, size);
 }
 
@@ -101,9 +101,9 @@ void JAL_exe(RISCV_cpu* cpu, u32 inst) {
 
 
 void JALR_exe(RISCV_cpu* cpu, u32 inst) {
-    uint64_t imm = imm_I_TYPE(inst);
-    uint64_t tmp = cpu->pc;
-    cpu->pc = (cpu->x[rs1(inst)] + (int64_t) imm) & 0xfffffffe;
+    u64 imm = imm_I_TYPE(inst);
+    u64 tmp = cpu->pc;
+    cpu->pc = (cpu->x[rs1(inst)] + (i64) imm) & 0xfffffffe;
     cpu->x[rd(inst)] = tmp;
     /*print_op("NEXT -> %#lx, imm:%#lx\n", cpu->pc, imm);*/
     //DBG(jalr)
@@ -117,8 +117,8 @@ void BEQ_exe(RISCV_cpu* cpu, u32 inst) {
 }
 void BNE_exe(RISCV_cpu* cpu, u32 inst) {
     u64 imm = imm_SB_TYPE(inst);
-    if ((int64_t) cpu->x[rs1(inst)] != (int64_t) cpu->x[rs2(inst)])
-        cpu->pc = (cpu->pc + (int64_t) imm - 4);
+    if ((i64) cpu->x[rs1(inst)] != (i64) cpu->x[rs2(inst)])
+        cpu->pc = (cpu->pc + (i64) imm - 4);
     //DBG(bne)
 }
 void BLT_exe(RISCV_cpu* cpu, u32 inst) {
@@ -135,13 +135,13 @@ void BGE_exe(RISCV_cpu* cpu, u32 inst) {
     //DBG(bge)
 }
 void BLTU_exe(RISCV_cpu* cpu, u32 inst) {
-    uint64_t imm = imm_SB_TYPE(inst);
+    u64 imm = imm_SB_TYPE(inst);
     if (cpu->x[rs1(inst)] < cpu->x[rs2(inst)])
         cpu->pc = cpu->pc + (i64) imm - 4;
     //DBG(bltu)
 }
 void BGEU_exe(RISCV_cpu* cpu, u32 inst) {
-    uint64_t imm = imm_SB_TYPE(inst);
+    u64 imm = imm_SB_TYPE(inst);
     if (cpu->x[rs1(inst)] >= cpu->x[rs2(inst)])
         cpu->pc = (i64) cpu->pc + (i64) imm - 4;
     //DBG(bgeu)
@@ -191,8 +191,8 @@ void LHU_exe(RISCV_cpu* cpu, u32 inst) {
 }
 
 void SB_exe(RISCV_cpu* cpu, u32 inst) {
-    uint64_t imm = imm_S_TYPE(inst);
-    uint64_t addr = cpu->x[rs1(inst)] + (int64_t) imm;
+    u64 imm = imm_S_TYPE(inst);
+    u64 addr = cpu->x[rs1(inst)] + (i64) imm;
     cpu_st(cpu, addr, 8, cpu->x[rs2(inst)]);
     //DBG(sb)
 }
@@ -204,7 +204,7 @@ void SH_exe(RISCV_cpu* cpu, u32 inst) {
 }
 void SW_exe(RISCV_cpu* cpu, u32 inst) {
     u64 imm = imm_S_TYPE(inst);
-    uint64_t addr = cpu->x[rs1(inst)] + (i64) imm;
+    u64 addr = cpu->x[rs1(inst)] + (i64) imm;
     cpu_st(cpu, addr, 32, cpu->x[rs2(inst)]);
     //DBG(sw)
 }
@@ -239,13 +239,13 @@ void XORI_exe(RISCV_cpu* cpu, u32 inst) {
 }
 
 void SRLI_exe(RISCV_cpu* cpu, u32 inst) {
-    uint64_t imm = imm_I_TYPE(inst);
+    u64 imm = imm_I_TYPE(inst);
     cpu->x[rd(inst)] = cpu->x[rs1(inst)] >> imm;
     //DBG(srli)
 }
 
 void SRAI_exe(RISCV_cpu* cpu, u32 inst) {
-    uint64_t imm = imm_I_TYPE(inst);
+    u64 imm = imm_I_TYPE(inst);
     cpu->x[rd(inst)] = (i32)cpu->x[rs1(inst)] >> imm;
     //DBG(srai)
 }
@@ -275,7 +275,7 @@ void SUB_exe(RISCV_cpu* cpu, u32 inst) {
 }
 
 void SLL_exe(RISCV_cpu* cpu, u32 inst) {
-    cpu->x[rd(inst)] = cpu->x[rs1(inst)] << (int64_t)cpu->x[rs2(inst)];
+    cpu->x[rd(inst)] = cpu->x[rs1(inst)] << (i64)cpu->x[rs2(inst)];
     //DBG(sll)
 }
 
