@@ -319,3 +319,101 @@ int cpu_execute(RISCV_cpu *cpu, u32 inst) {
     /*printf("%s\n%#.8lx -> Inst: %#.8x <OpCode: %#.2x, funct3:%#x, funct7:%#x> %s",*/
             /*ANSI_YELLOW, cpu->pc-4, inst, opcode, funct3, funct7, ANSI_RESET); // DEBUG*/
     printf("%s\n%#.8lx -> %s", ANSI_YELLOW, cpu->pc-4, ANSI_RESET); // DEBUG
+
+switch (opcode) {
+        case RV32i_LUI:   LUI_exe(cpu, inst); break;
+        case RV32i_AUIPC: AUIPC_exe(cpu, inst); break;
+
+        case RV32i_JAL:   JAL_exe(cpu, inst); break;
+        case RV32i_JALR:  JALR_exe(cpu, inst); break;
+
+        case RV32i_SB_TYPE:
+            switch (funct3) {
+                case BEQ:   BEQ_exe(cpu, inst); break;
+                case BNE:   BNE_exe(cpu, inst); break;
+                case BLT:   BLT_exe(cpu, inst); break;
+                case BGE:   BGE_exe(cpu, inst); break;
+                case BLTU:  BLTU_exe(cpu, inst); break;
+                case BGEU:  BGEU_exe(cpu, inst); break;
+                default: ;
+            } break;
+
+        case RV32i_LOAD:
+            switch (funct3) {
+                case LB  :  LB_exe(cpu, inst); break;  
+                case LH  :  LH_exe(cpu, inst); break;  
+                case LW  :  LW_exe(cpu, inst); break;    
+                case LHU :  LHU_exe(cpu, inst); break; 
+                default: ;
+            } break;
+
+        case RV32i_S_TYPE:
+            switch (funct3) {
+                case SB  :  SB_exe(cpu, inst); break;  
+                case SH  :  SH_exe(cpu, inst); break;  
+                case SW  :  SW_exe(cpu, inst); break;   
+                default: ;
+            } break;
+
+        case RV32i_I_TYPE:  
+            switch (funct3) {
+                case ADDI:  ADDI_exe(cpu, inst); break;
+                case SLLI:  SLLI_exe(cpu, inst); break;
+                case SLTI:  SLTI_exe(cpu, inst); break;
+                case SLTIU: SLTIU_exe(cpu, inst); break;
+                case XORI:  XORI_exe(cpu, inst); break;
+                case SRI:   
+                    switch (funct7) {
+                        case SRLI:  SRLI_exe(cpu, inst); break;
+                        case SRAI:  SRAI_exe(cpu, inst); break;
+                        default: ;
+                    } break;
+                case ORI:   ORI_exe(cpu, inst); break;
+                case ANDI:  ANDI_exe(cpu, inst); break;
+                default:
+                    fprintf(stderr, 
+                            "[-] ERROR-> opcode:0x%x, funct3:0x%x, funct7:0x%x\n"
+                            , opcode, funct3, funct7);
+                    return 0;
+            } break;
+
+        case RV32i_R_TYPE:  
+            switch (funct3) {
+                case ADDSUB:
+                    switch (funct7) {
+                        case ADD: ADD_exe(cpu, inst);
+                        case SUB: SUB_exe(cpu, inst);
+                        default: ;
+                    } break;
+                case SLL:  SLL_exe(cpu, inst); break;
+                case SLT:  SLT_exe(cpu, inst); break;
+                case SLTU: SLTU_exe(cpu, inst); break;
+                case XOR:  XOR_exe(cpu, inst); break;
+                case SR:   
+                    switch (funct7) {
+                        case SRL:  SRL_exe(cpu, inst); break;
+                        case SRA:  SRA_exe(cpu, inst); break;
+                        default: ;
+                    }
+                case OR:   OR_exe(cpu, inst); break;
+                case AND:  AND_exe(cpu, inst); break;
+                default:
+                    fprintf(stderr, 
+                            "[-] ERROR-> opcode:0x%x, funct3:0x%x, funct7:0x%x\n"
+                            , opcode, funct3, funct7);
+                    return 0;
+            } break;
+
+        case 0x00:
+            return 0;
+
+        default:
+            fprintf(stderr, 
+                    "[-] ERROR-> opcode:0x%x, funct3:0x%x, funct3:0x%x\n"
+                    , opcode, funct3, funct7);
+            return 0;
+            /*exit(1);*/
+    }
+    return 1;
+}
+
