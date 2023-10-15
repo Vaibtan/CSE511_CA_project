@@ -2,23 +2,29 @@
 #include "instruction.hpp"
 #include "memory.hpp"
 
+//DBG_OPCODE_HANDLERS
+#define ANSI_YELLOW  "\x1b[33m"
+#define ANSI_BLUE    "\x1b[31m"
+#define ANSI_RESET   "\x1b[0m"
+
 void CPU_init(RISCV_cpu *cpu) {
     cpu->x[0] = 0x00;                                   // register x0 hardwired to 0
     cpu->x[2] = RISCV_MEM_BASE + RISCV_MEM_SIZE;        // Set stack pointer
     cpu->pc = RISCV_MEM_BASE;                           // Set program counter to the base address
 }
 
-u32 cpu_fetch(RISCV_cpu *cpu, RISC_mem *mem) {
-    uint32_t inst = (u64)mem_ld(mem, cpu->pc, 32);
+
+u32 cpu_fetch(RISCV_cpu *cpu) {
+    u32 inst = mem_bus_ld(&(cpu->__bus), cpu->pc, 32);
     return inst;
 }
 
-u64 cpu_ld(RISCV_cpu* cpu, RISC_mem *mem, u64 addr, uint64_t size) {
-    return mem_ld(mem, addr, size);
+u64 cpu_ld(RISCV_cpu* cpu, u64 addr, uint64_t size) {
+    return mem_bus_ld(&(cpu->__bus), addr, size);
 }
 
-void cpu_st(RISCV_cpu* cpu, RISC_mem *mem, u64 addr, u64 size, u64 value) {
-    mem_st(mem, addr, size, value);
+void cpu_st(RISCV_cpu* cpu, u64 addr, u64 size, u64 value) {
+    mem_bus_st(&(cpu->__bus), addr, size, value);
 }
 
 //INSTRUCTION_DECODING
@@ -203,13 +209,6 @@ void SW_exe(RISCV_cpu* cpu, u32 inst) {
     //DBG(sw)
 }
 
-void SD_exe(RISCV_cpu* cpu, u32 inst) {
-    uint64_t imm = imm_S_TYPE(inst);
-    uint64_t addr = cpu->x[rs1(inst)] + (i64) imm;
-    cpu_st(cpu, addr, 64, cpu->regs[rs2(inst)]);
-    //DBG(sd)
-}
-
 void ADDI_exe(RISCV_cpu* cpu, u32 inst) {
     u64 imm = imm_I_TYPE(inst);
     cpu->x[rd(inst)] = cpu->x[rs1(inst)] + (i64) imm;
@@ -316,7 +315,7 @@ void AND_exe(RISCV_cpu* cpu, u32 inst) {
     //DBG(and)
 }
 
-int cpu_execute(CPU *cpu, uint32_t inst) {
+int cpu_execute(RISCV_cpu *cpu, u32 inst) {
     int opcode = inst & 0x7f;           // opcode in bits 6..0
     int funct3 = (inst >> 12) & 0x7;    // funct3 in bits 14..12
     int funct7 = (inst >> 25) & 0x7f;   // funct7 in bits 31..25
