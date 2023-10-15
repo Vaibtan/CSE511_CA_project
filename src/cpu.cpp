@@ -168,13 +168,7 @@ void LW_exe(RISCV_cpu* cpu, u32 inst) {
     cpu->x[rd(inst)] = (i64)(i32) cpu_ld(cpu, addr, 32);
     //DBG(lw)
 }
-void LD_exe(RISCV_cpu* cpu, u32 inst) {
-    // load 8 byte to rd from address in rs1
-    u64 imm = imm_I_TYPE(inst);
-    u64 addr = cpu->x[rs1(inst)] + (i64) imm;
-    cpu->x[rd(inst)] = (i64) cpu_ld(cpu, addr, 64);
-    //DBG(ld)
-}
+
 void LBU_exe(RISCV_cpu* cpu, u32 inst) {
     // load unsigned 1 byte to rd from address in rs1
     u64 imm = imm_I_TYPE(inst);
