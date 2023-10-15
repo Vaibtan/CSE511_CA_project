@@ -1,4 +1,4 @@
-def Read_Input():
+def Read_Input(): # Reads input commands in assembly language from "Input.txt"
     try:
         file = open("Input.txt", "r")
         Lines = file.readlines()
@@ -10,17 +10,14 @@ def Read_Input():
         file.close()
     return Instructions
 
-def Write_Output(res):
-    try:
-        file = open("Output.txt", "w")
-        for line in res:
-            file.write(line + '\n')
+def Write_Output(res): # Writes binary output in "Output.bin" 
+    res_str = ''.join(res)
+    res_str.replace('\n', '')
+    with open('Output.bin', 'wb') as binary_file:
+        binary_data = res_str.encode('utf-8')
+        binary_file.write(binary_data)
 
-    finally:
-        file.close()
-
-
-def Create_Registers(n):
+def Create_Registers(n): # Initializes 32 registers as per RISC V convention
     if n == 0:
         return [""]
     temp_list = Create_Registers(n - 1)
@@ -30,7 +27,7 @@ def Create_Registers(n):
         Reg.append(i + "1")
     return Reg
 
-def Decimal_Binary(num, bits):
+def Decimal_Binary(num, bits): # Converts immediate values in decimal to 2's complement binary format
     sign = 0
 
     if num < 0:
@@ -72,7 +69,7 @@ def Decimal_Binary(num, bits):
     return res[::-1]
         
 
-def Decimal_Binary_Register(num, bits):
+def Decimal_Binary_Register(num, bits): # Converts register numbers in decimal to binary format
     res = ""
     while num > 0:
         mod = num % 2
@@ -98,7 +95,7 @@ R  = {"ADD", "SUB", "SLL", "SLT", "SLTU", "XOR", "SRL", "SRA", "OR", "AND"}
 
 Registers = Create_Registers(5)
 
-Template = {
+Template = {                                  # This is the template we use for processing all 37 commands
     "LUI"   :   "0" * 25 + "0110111" ,
     "AUIPC" :   "0" * 25 + "0010111" ,
     
@@ -154,7 +151,7 @@ Instructions = Read_Input()
 Binary_Instructions = []
 
 for Inst in Instructions:
-    type = Inst[0].upper()         #Temporary Fix      #This gives the type of instruction
+    type = Inst[0].upper()           #This gives the type of instruction
 
     res = Template[type]
     if type in R:
@@ -205,13 +202,11 @@ for Inst in Instructions:
         res = res[0:25] + imm[5:11] + imm[12]
 
     elif type in U: 
-        print(res)
         rd  = int(Inst[1][1:])   
         imm = Decimal_Binary(int(Inst[2]), 20)
 
         res = res[0:7]  + Decimal_Binary_Register(rd, 5) + res[12:32]
         res = res[0:12] + imm
-        
     elif type in UJ: 
         rd  = int(Inst[1][1:])   
         imm = Decimal_Binary(int(Inst[2]), 21)
