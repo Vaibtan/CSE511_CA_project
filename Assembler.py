@@ -17,6 +17,7 @@ def Write_Output(res): # Writes binary output in "Output.bin"
         binary_data = res_str.encode('utf-8')
         binary_file.write(binary_data)
 
+
 def Create_Registers(n): # Initializes 32 registers as per RISC V convention
     if n == 0:
         return [""]
@@ -226,7 +227,7 @@ for Inst in Instructions:
         res = res[0:20] + Decimal_Binary_Register(rs2, 5) + res[25:32]
         res = res[0:7]  + imm[0:5] + res[12:32]
         res = res[0:25] + imm[5:12]
-        
+
     res = res[::-1]
     Binary_Instructions.append(res)
        
