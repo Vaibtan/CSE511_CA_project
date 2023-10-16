@@ -92,7 +92,7 @@ S =  {"SW","SB","SH"}
 SB = {"BEQ","BNE","BLT","BGE", "BLTU", "BGEU"}
 I =  {"JALR", "LB", "LH", "LW", "LBU", "LHU", "ADDI", "SLTI", "SLTIU", "XORI", "ORI", "ANDI", "SLLI", "SRLI", "SRAI"}
 R  = {"ADD", "SUB", "SLL", "SLT", "SLTU", "XOR", "SRL", "SRA", "OR", "AND"}
-
+Z =  {"LOADNOC","STORENOC"}   # add storenoc and loadnoc (any opcode value will work)
 Registers = Create_Registers(5)
 
 Template = {                                  # This is the template we use for processing all 37 commands
@@ -141,6 +141,9 @@ Template = {                                  # This is the template we use for 
     "SRA"    :   "0100000" + "0"*10 + "101" + "0"*5 + "0110011", 
     "OR"     :   "0000000" + "0"*10 + "110" + "0"*5 + "0110011",
     "AND"    :   "0000000" + "0"*10 + "111" + "0"*5 + "0110011",
+
+    "LOADNOC"   :   "0" * 17 + "000" + "0"*5 + "0000111",   # 2 EXTRA instructions implemented 
+    "STORENOC"  :   "0" * 17 + "001" + "0"*5 + "0000111",  # note the opcode chosen (template similar to S-type)
 }
 
 for Inst in Template:
@@ -214,6 +217,16 @@ for Inst in Instructions:
         res = res[0:7]  + Decimal_Binary_Register(rd, 5) + res[12:32]
         res = res[0:12] + imm[12:20] + imm[11] + imm[1:11] + imm[20]
     
+    elif type in Z:  # for LOADNOC AND STORENOC
+        rs1 = int(Inst[1][1:])
+        rs2 = int(Inst[2][1:])
+        imm = Decimal_Binary(int(Inst[3]), 12)
+
+        res = res[0:15] + Decimal_Binary_Register(rs1, 5) + res[20:32]
+        res = res[0:20] + Decimal_Binary_Register(rs2, 5) + res[25:32]
+        res = res[0:7]  + imm[0:5] + res[12:32]
+        res = res[0:25] + imm[5:12]
+        
     res = res[::-1]
     Binary_Instructions.append(res)
        
