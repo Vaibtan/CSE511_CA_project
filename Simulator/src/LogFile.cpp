@@ -1,4 +1,4 @@
-#include "cpu.hpp"
+#include "LogFile.hpp"
 
 void memstate(FILE* file, RISCV_cpu* cpu){
     fprintf(file, "Memory location  :   Data\n");
