@@ -25,6 +25,7 @@ MAKE_CMD = $(CXX) $(SRC_FILES) -o $(APP_NAME) $(INCLUDE_DIRS)
 
 all:
 	$(DEBUG)$(MAKE_CMD)
+	./$(APP_NAME) Output.bin
 
 # This command is issued before you recompile the project after making changes
 clean:
