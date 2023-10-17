@@ -21,10 +21,10 @@ void start(RISCV_cpu *cpu,u32 INST_END){
         cpu_memory(cpu);
         cpu_writeback(cpu);
         cpu_pc_update(cpu);
-        // statechange(cpu->__pipe);
-        statechange_withoutBYPASSING(cpu->__pipe);
         // call savelog(cpu, pipe)
         logValues(fp,cpu, cpu->__pipe);
+        // statechange(cpu->__pipe);
+        statechange_withoutBYPASSING(cpu->__pipe);
         cpu->__pipe->cycle+=1;
     }
     fclose(fp);
