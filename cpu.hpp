@@ -27,4 +27,7 @@ void cpu_memory(RISCV_cpu *cpu);
 void cpu_writeback(RISCV_cpu*cpu);
 void cpu_pc_update(RISCV_cpu*cpu);
 
+//needed for initiall loading of instructions
+void cpu_st(RISCV_cpu* cpu, u32 addr, u32 size, u32 data);
+
 #endif
