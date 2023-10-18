@@ -11,11 +11,10 @@ def Read_Input(): # Reads input commands in assembly language from "Input.txt"
     return Instructions
 
 def Write_Output(res): # Writes binary output in "Output.bin" 
-    res_str = ''.join(res)
-    res_str.replace('\n', '')
     with open('Output.bin', 'wb') as binary_file:
-        binary_data = res_str.encode('utf-8')
-        binary_file.write(binary_data)
+        for inst in res:
+                binary_data = int(inst, 2).to_bytes(4, byteorder='little')
+                binary_file.write(binary_data)
 
 
 def Create_Registers(n): # Initializes 32 registers as per RISC V convention
@@ -205,12 +204,13 @@ for Inst in Instructions:
         res = res[0:7]  + imm[11] + imm[1:5] + res[12:32]
         res = res[0:25] + imm[5:11] + imm[12]
 
-    elif type in U: 
+    elif type in U:             
         rd  = int(Inst[1][1:])   
         imm = Decimal_Binary(int(Inst[2]), 20)
 
         res = res[0:7]  + Decimal_Binary_Register(rd, 5) + res[12:32]
         res = res[0:12] + imm
+
     elif type in UJ: 
         rd  = int(Inst[1][1:])   
         imm = Decimal_Binary(int(Inst[2]), 21)
@@ -227,7 +227,7 @@ for Inst in Instructions:
         res = res[0:20] + Decimal_Binary_Register(rs2, 5) + res[25:32]
         res = res[0:7]  + imm[0:5] + res[12:32]
         res = res[0:25] + imm[5:12]
-
+        
     res = res[::-1]
     Binary_Instructions.append(res)
        
