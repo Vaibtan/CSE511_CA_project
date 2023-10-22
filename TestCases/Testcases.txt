@@ -1,7 +1,7 @@
 lui x5, 17
 auipc x8, 12
 jal x4, 0
-jalr x8, 4(x0)
+jalr x8, x0, 4
 beq x6, x30, 16
 bne x2, x1, 8
 blt x3, x5, 4
