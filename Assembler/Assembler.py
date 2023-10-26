@@ -1,6 +1,8 @@
+import sys
+sys.path.append('../')
 def Read_Input(): # Reads input commands in assembly language from "Input.txt"
     try:
-        file = open("Input.txt", "r")
+        file = open("Input/Input.txt", "r")
         Lines = file.readlines()
         Instructions = []
         for i in Lines:
@@ -11,7 +13,7 @@ def Read_Input(): # Reads input commands in assembly language from "Input.txt"
     return Instructions
 
 def Write_Output(res): # Writes binary output in "Output.bin" 
-    with open('Output.bin', 'wb') as binary_file:
+    with open('Assembler/Output/Output.bin', 'wb') as binary_file:
         for inst in res:
                 binary_data = int(inst, 2).to_bytes(4, byteorder='little')
                 binary_file.write(binary_data)

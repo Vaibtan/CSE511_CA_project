@@ -1,3 +1,5 @@
+import sys
+sys.path.append('../')
 def read_binary_file(file_path):
     with open(file_path, 'rb') as binary_file:
         binary_data = binary_file.read()
@@ -28,10 +30,10 @@ def compare_files(output_file_path, result_file_path):
         status.append(remark)
     return score, total, lines, status
 
-input_file_path  = "Input.txt"     # Input file which contains assembly instructions
-output_file_path = "Output.bin"    # File generated from "Assembler.py"
-result_file_path = "binary.txt"    # File containing the correct conversion of "Input.txt" to binary, used to check "Output.bin"
-evaluation_file_path = "Assembler_Evaluation.txt" #Text file storing the detailed evaluation
+input_file_path  = "Input/Input.txt"     # Input file which contains assembly instructions
+output_file_path = "Assembler/Output/Output.bin"    # File generated from "Assembler.py"
+result_file_path = "Input/binary.txt"    # File containing the correct conversion of "Input.txt" to binary, used to check "Output.bin"
+evaluation_file_path = "Assembler/Result/Assembler_Evaluation.txt" #Text file storing the detailed evaluation
 
 score, total, lines, status = compare_files(output_file_path, result_file_path)
 
