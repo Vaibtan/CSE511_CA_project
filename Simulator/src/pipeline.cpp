@@ -1,5 +1,27 @@
 #include "pipeline.hpp"
 
+// Bypass register's reading function
+u32 bypass_read(pipeline *pipe,struct d_unit *decode,bool isrs1){
+    if(isrs1){
+        if(pipe->bypass->rde==decode->rs1){
+            return pipe->bypass->res_exec;
+        }
+        else if(pipe->bypass->rdm==decode->rs1){
+            return pipe->bypass->res_mem;
+        }
+        return decode->rs1_val;
+    }
+    else{
+        if(pipe->bypass->rde==decode->rs2){
+            return pipe->bypass->res_exec;
+        }
+        else if(pipe->bypass->rdm==decode->rs2){
+            return pipe->bypass->res_mem;
+        }
+        return decode->rs2_val;
+    }
+}
+
 pipeline* pipe_init(){
     pipeline *pipe = (pipeline *)malloc(sizeof(pipeline));
     pipe->cycle = 0;
@@ -8,20 +30,24 @@ pipeline* pipe_init(){
     pipe->execute = (exec_unit *)malloc(sizeof(exec_unit));
     pipe->memory = (mem_unit *)malloc(sizeof(mem_unit));
     pipe->writeback = (wb_unit *)malloc(sizeof(wb_unit));
-    // pipe->bypass = (bypassreg *)malloc(sizeof(bypassreg));
+    pipe->bypass = (bypassreg *)malloc(sizeof(bypassreg));
     pipeline_reset(pipe);
     return pipe;
 }
 
-// void bypass_reset(bypassreg *bypass){
-//     bypass->res_exec = 0;
-//     bypass->res_mem = 0;
-//     bypass->rde = 34;
-//     bypass->rdm = 34;
-//     bypass->pcd = 0;
-//     bypass->pcf = 0;
-//     bypass->new_pc = 0;
-// }
+bool pipeline_end(bool fetchdone,pipeline* pipe){
+    if(!fetchdone)return true;
+    if(pipe->fetch->inst==0 && pipe->decode->inst==0 && (i32)pipe->execute->inst==0 )return false;
+    return true;
+}
+
+void bypass_reset(bypassreg *bypass){
+    bypass->res_exec = 0;
+    bypass->res_mem = 0;
+    bypass->rde = 34;
+    bypass->rdm = 34;
+    bypass->new_pc =0;
+}
 
 void decode_reset(d_unit *decode){
     decode->inst = 0;
@@ -36,11 +62,15 @@ void decode_reset(d_unit *decode){
     decode->isload=false;
     decode->isstore=false;
     decode->iswrite=false;
+    decode->isnoc=false;
+    decode->isstype=false;
+    decode->pcd=0;
 }
 
 void fetch_reset(f_unit *fetch){
     fetch->inst = 0;
     fetch->done=false;
+    fetch->pcf=0;
 }
 
 void execute_reset(exec_unit *execute){
@@ -56,6 +86,9 @@ void execute_reset(exec_unit *execute){
     execute->isload=false;
     execute->isstore=false;
     execute->iswrite=false;
+    execute->isnoc=false;
+    execute->isstype=false;
+    execute->pce=0;
 }
 
 void memory_reset(mem_unit *memory){
@@ -68,6 +101,8 @@ void memory_reset(mem_unit *memory){
     memory->isload=false;
     memory->isstore=false;
     memory->iswrite=false;
+    memory->isnoc=false;
+    memory->isstype=false;
 }
 
 void writeback_reset(wb_unit *writeback){
@@ -88,11 +123,12 @@ void pipeline_reset(pipeline *pipe){
     execute_reset(pipe->execute);
     memory_reset(pipe->memory);
     writeback_reset(pipe->writeback);
-    // bypass_reset(pipe->bypass);
+    bypass_reset(pipe->bypass);
     pipe->isbranch=false;
     pipe->newpc_offset=4;
     pipe->isjalr=false;
-    pipe->branch_by_decode=false;
+    pipe->isbranch2=false;
+    pipe->newpc_offset2=4;
     pipe->de_stall=false;
     pipe->ex_stall=false;
 }
@@ -101,6 +137,7 @@ void changef_to_d(pipeline *pipe){
     pipe->decode->isload=false;
     pipe->decode->isstore=false;
     pipe->decode->iswrite=false;
+    pipe->decode->isnoc=false;
     pipe->decode->inst = pipe->fetch->inst;
     pipe->decode->rs1 = 34;
     pipe->decode->rs2 = 34;
@@ -110,21 +147,24 @@ void changef_to_d(pipeline *pipe){
     pipe->decode->rs1_val = 0;
     pipe->decode->rs2_val = 0;
     pipe->decode->done=false;
-    // pipe->bypass->pcd = pipe->bypass->pcf;
+    pipe->decode->isstype=false;
+    pipe->decode->pcd=pipe->fetch->pcf;
 }
 
 void changed_to_ex(pipeline *pipe){
     pipe->execute->isstore = pipe->decode->isstore;
     pipe->execute->isload = pipe->decode->isload;
     pipe->execute->iswrite = pipe->decode->iswrite;
+    pipe->execute->isnoc = pipe->decode->isnoc;
     pipe->execute->inst = pipe->decode->inst;
-    // pipe->execute->op1=bypass_read(pipe,pipe->decode,true);
-    pipe->execute->op1 = pipe->decode->rs1_val;
+    pipe->execute->isstype = pipe->decode->isstype;
+    pipe->execute->op1=bypass_read(pipe,pipe->decode,true);
+    // pipe->execute->op1 = pipe->decode->rs1_val;
     pipe->execute->rs = pipe->decode->rs2;
     pipe->execute->result = 0;
     if(pipe->decode->rs2!=34){
-        pipe->execute->op2 = pipe->decode->rs2_val;
-        // pipe->execute->op2=bypass_read(pipe,pipe->decode,false);
+        // pipe->execute->op2 = pipe->decode->rs2_val;
+        pipe->execute->op2=bypass_read(pipe,pipe->decode,false);
         if(pipe->decode->isimm){
             pipe->execute->rd = pipe->decode->imm;
         }
@@ -139,6 +179,7 @@ void changed_to_ex(pipeline *pipe){
     pipe->execute->size = 0;
     pipe->execute->usign = false;
     pipe->execute->done=false;
+    pipe->execute->pce=pipe->decode->pcd;
 }
 
 void changeex_to_m(pipeline *pipe){
@@ -148,6 +189,8 @@ void changeex_to_m(pipeline *pipe){
     pipe->memory->isload = pipe->execute->isload;
     pipe->memory->isstore = pipe->execute->isstore;
     pipe->memory->iswrite = pipe->execute->iswrite;
+    pipe->memory->isnoc = pipe->execute->isnoc;
+    pipe->memory->isstype = pipe->execute->isstype;
     if(pipe->memory->isstore){
         pipe->memory->addr = pipe->execute->result;
         pipe->memory->value = pipe->execute->op2;
@@ -172,8 +215,9 @@ void changem_to_wb(pipeline *pipe){
 void reset_branchflags(pipeline *pipe){
     pipe->isbranch=false;
     pipe->newpc_offset=4;
+    pipe->isbranch2=false;
     pipe->isjalr=false;
-    pipe->branch_by_decode=false;
+    pipe->newpc_offset2=4;
 }
 
 //to try state change
@@ -186,6 +230,7 @@ void try_statechange(pipeline* pipe){
         if(!pipe->de_stall){
             changed_to_ex(pipe);
             changef_to_d(pipe);
+            fetch_reset(pipe->fetch);
         }
     }
 }
@@ -193,42 +238,53 @@ void try_statechange(pipeline* pipe){
 //to detect and kill the pipeline
 void jump_withoutBYPASSING(pipeline*pipe){
     if(pipe->isbranch){
-        if(pipe->branch_by_decode){
-            fetch_reset(pipe->fetch);
-        }
-        else{
-            fetch_reset(pipe->fetch);
-            decode_reset(pipe->decode);
-        }
+        fetch_reset(pipe->fetch);
+        decode_reset(pipe->decode);
+    }
+    else if(pipe->isbranch2){
+        fetch_reset(pipe->fetch);
     }
     reset_branchflags(pipe);
 }
 
-// void jump(pipeline*pipe){
-//     if(pipe->isbranch){
-//         if(pipe->branch_by_decode){
-//             if(pipe->bypass->new_pc!=pipe->bypass->pcf)
-//             fetch_reset(pipe->fetch);
-//         }
-//         else{
-//             if(pipe->bypass->new_pc!=pipe->bypass->pcd){
-//                 decode_reset(pipe->decode);
-//                 if(pipe->bypass->new_pc!=pipe->bypass->pcf)
-//                 fetch_reset(pipe->fetch);
-//             }
-//         }
-//     }
-//     reset_branchflags(pipe);
-// }
+u32 jump(pipeline*pipe,u32* pc){
+    if(pipe->isbranch){
+        if(pipe->bypass->new_pc!=pipe->decode->pcd){
+            decode_reset(pipe->decode);
+            if(pipe->bypass->new_pc!=pipe->fetch->pcf){
+                fetch_reset(pipe->fetch);
+            }
+            else{
+                *pc=pipe->fetch->pcf +4;
+            }
+        }
+        else{
+            *pc=pipe->decode->pcd +8;
+        }
+    }
+    else if(pipe->isbranch2){
+        if(pipe->bypass->new_pc!=pipe->fetch->pcf){
+            fetch_reset(pipe->fetch);
+        }
+        else{
+            *pc=pipe->fetch->pcf +4;
+        }
+    }
+
+    reset_branchflags(pipe);
+}
 
 // to stall the pipeline
 void stall_withoutBYPASSING(pipeline*pipe){
-    if(pipe->execute->isstore && pipe->memory->rd==pipe->execute->rs){
+    if(pipe->execute->isstore && pipe->execute->rs!=34 && pipe->memory->rd!=34  && pipe->memory->rd==pipe->execute->rs){
         pipe->ex_stall=true;
     }
     else{
         pipe->ex_stall=false;
-        if(pipe->memory->rd==pipe->decode->rs1||pipe->memory->rd==pipe->decode->rs2){
+        if(!pipe->memory->isstype && pipe->memory->rd!=34 && ((pipe->decode->rs1!=34 && pipe->memory->rd==pipe->decode->rs1)||(pipe->decode->rs2!=34 && pipe->memory->rd==pipe->decode->rs2))){
+            pipe->de_stall=true;
+        }
+        else if( !pipe->decode->isstore && !pipe->execute->isstype && pipe->execute->rd!=34 && ((pipe->decode->rs1!=34 && pipe->execute->rd==pipe->decode->rs1)||(pipe->decode->rs2!=34 && pipe->execute->rd==pipe->decode->rs2))){
             pipe->de_stall=true;
         }
         else
@@ -236,48 +292,38 @@ void stall_withoutBYPASSING(pipeline*pipe){
     }
 }
 
-// void stall(pipeline*pipe){
-//     if(pipe->execute->isload &&(pipe->execute->rd==pipe->decode->rs1||pipe->execute->rd==pipe->decode->rs2))
-//         pipe->de_stall=true;
-//     else
-//     pipe->de_stall=false;
-//     pipe->ex_stall=false;
-// }
+void stall(pipeline*pipe){
+    if(pipe->execute->isload && pipe->execute->rd!=34 && ((pipe->decode->rs1 !=34 && pipe->execute->rd==pipe->decode->rs1)||( pipe->decode->rs2 && pipe->execute->rd==pipe->decode->rs2)))
+        pipe->de_stall=true;
+    else
+    pipe->de_stall=false;
+    pipe->ex_stall=false;
+}
 
 // state change functions
-void statechange_withoutBYPASSING(pipeline* pipe){
+bool statechange_withoutBYPASSING(pipeline* pipe,bool over){
+    bool notend=pipeline_end(over,pipe);
     jump_withoutBYPASSING(pipe);
     stall_withoutBYPASSING(pipe);
     try_statechange(pipe);
+    if(over){
+        pipe->fetch->done=true;
+    }
+    pipe->cycle+=1;
+    return notend;
 }
 
-// void statechange(pipeline* pipe){
-//     jump(pipe);
-//     stall(pipe);
-//     try_statechange(pipe);
-// }
-
-//Bypass register's reading function
-// u32 bypass_read(pipeline *pipe,struct d_unit *decode,bool isrs1){
-//     if(isrs1){
-//     if(pipe->bypass->rde==decode->rs1){
-//         return pipe->bypass->res_exec;
-//     }
-//     else if(pipe->bypass->rdm==decode->rs1){
-//         return pipe->bypass->res_mem;
-//     }
-//     return decode->rs1_val;
-//     }
-//     else{
-//     if(pipe->bypass->rde==decode->rs2){
-//         return pipe->bypass->res_exec;
-//     }
-//     else if(pipe->bypass->rdm==decode->rs2){
-//         return pipe->bypass->res_mem;
-//     }
-//     return decode->rs2_val;
-//     }
-// }
+bool statechange(pipeline* pipe,u32* pc, bool over){
+    bool notend=pipeline_end(over,pipe);
+    jump(pipe,pc);
+    stall(pipe);
+    try_statechange(pipe);
+    if(over){
+        pipe->fetch->done=true;
+    }
+    pipe->cycle+=1;
+    return notend;
+}
 
 
 // ignore (useless implementation) 

@@ -6,13 +6,16 @@
 struct f_unit{
     u32 inst; //readinst
     bool done; //executed once?
+    u32 pcf;
 };
 
 struct d_unit{
-    bool isstore;// buffer
+    bool isnoc;// buffer
+    bool isstore;// ->
     bool isload; // ->
     bool iswrite;//  signals
-    u8 inst; //readinst then insttype
+    bool isstype; // signal for stalling (without bypassing)
+    int inst; //readinst then insttype
     u32 rs1; //rs1 decoded
     u32 rs2; //rs2 decoded
     bool isimm; //imm present?
@@ -21,12 +24,15 @@ struct d_unit{
     u32 rs1_val; //rs1 value
     u32 rs2_val; //rs2 value
     bool done; //executed once?
+    u32 pcd; // pc of decode stage 
 };
 
 struct exec_unit{
-    bool isstore;// buffer
+    bool isnoc;// buffer
+    bool isstore;// ->
     bool isload; // ->
     bool iswrite;//  signals
+    bool isstype; // signal for stalling (without bypassing)
     u8 inst; //insttype
     u32 op1; //rs1
     u32 op2; //imm ,rs2
@@ -36,19 +42,21 @@ struct exec_unit{
     bool usign; //unsigned
     bool done; //executed once?
     u32 rs; //rs for store
+    u32 pce; // pc of exec stage
 };
 
 struct mem_unit{
+    bool isnoc;// signals for mem_map_registers
     bool isstore; //signals store & 
     bool isload; // load
     bool iswrite; // buffer signal
-    u64 addr; //address to load/store
+    bool isstype; // signal for stalling (without bypassing)
+    u32 addr; //address to load/store
     u8 size; //size of load/store
-    u64 value; //value to store or loaded value
+    u32 value; //value to store or loaded value
     u32 rd; //buffer for rd
     bool usign; //unsigned
     bool done; //executed once?
-
 };
 struct wb_unit{
     bool iswrite;//signal(write to regfile)
@@ -57,15 +65,13 @@ struct wb_unit{
     bool done; //executed once?
 };
 
-// struct bypassreg{
-//     u32 res_exec; //result of execute
-//     u32 res_mem; //result of memory(load)
-//     u32 rde; // register for execute
-//     u32 rdm; // register fof memory
-//     u32 pcd; //pc of decode
-//     u32 pcf; //pc of fetch
-//     u32 new_pc; //new pc 
-// };
+struct bypassreg{
+    u32 res_exec; //result of execute
+    u32 res_mem; //result of memory(load)
+    u32 rde; // register for execute
+    u32 rdm; // register fof memory
+    u32 new_pc; //new pc 
+};
 
 struct pipeline{
     int cycle; //current cycle no
@@ -74,11 +80,12 @@ struct pipeline{
     exec_unit *execute; //execute unit
     mem_unit *memory; //memory unit
     wb_unit *writeback; //writeback unit
-    bool isbranch; //branch taken?
-    u32 newpc_offset; //new pc offset or new pc(for jalr)
+    bool isbranch; //branch taken? (by execute)
+    u32 newpc_offset; //new pc offset (for execute)
     bool isjalr; //jalr taken?
-    bool branch_by_decode; //branched in decode?
-    // struct bypassreg* bypass; //bypass register
+    bool isbranch2; //branched in decode?
+    u32 newpc_offset2; //new pc offset or new pc(for jalr) (for decode)
+    struct bypassreg* bypass; //bypass register 
     bool de_stall; //stall decode?
     bool ex_stall; //stall execute?
 };
@@ -92,10 +99,10 @@ pipeline* pipe_init();
 void pipeline_reset(pipeline *pipe);
 
 // to controll state changes in pipeline
-// void statechange(pipeline* pipe);
-void statechange_withoutBYPASSING(pipeline* pipe);
-
-
+bool statechange(pipeline* pipe,u32* pc,bool over);
+bool statechange_withoutBYPASSING(pipeline* pipe,bool over);
+//Pipeline ending function
+// bool pipeline_end(bool fetchdone,pipeline* pipe);
 // hidden implementations
 
 // reset bypass registers

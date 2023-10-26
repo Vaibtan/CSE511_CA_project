@@ -1,10 +1,10 @@
 #include "membus.hpp"
 
-uint64_t mem_bus_ld(MEM_BUS* __bus, u64 addr, u64 size){
+u32 mem_bus_ld(MEM_BUS* __bus, u32 addr, u32 size){
     return mem_ld((__bus->riscv_mem), addr,size);
 }
 
-void mem_bus_st(MEM_BUS* __bus, u64 addr, u64 size, u64 value){
+void mem_bus_st(MEM_BUS* __bus, u32 addr, u32 size, u32 value){
     mem_st((__bus->riscv_mem), addr, size, value);
 }
 

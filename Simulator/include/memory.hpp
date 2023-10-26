@@ -4,15 +4,15 @@
 
 //add_ptr TAKES AN ADDRESS FROM RISCV MEM_SPACE AND RETURNS A PTR. TO THE POS. OF VALUE IN THE MEM. ;
 
-#define RISCV_MEM_SIZE 1024 * 1024      //MEMORY_SIZE OF 1MB
-#define RISCV_MEM_BASE 0x80000000
-
+#define RISCV_MEM_SIZE 1024 * 64     //MEMORY_SIZE OF 64kB
+// #define RISCV_MEM_BASE 0x10000 // 65536
+#define RISCV_MEM_BASE 0 // 65536
 typedef struct RISC_mem{
     u8 rv32i_mem[RISCV_MEM_SIZE];
 } RISC_mem;
 
 
-u64 mem_ld(RISC_mem* mem, u32 addr, u32 sz_);
+u32 mem_ld(RISC_mem* mem, u32 addr, u32 sz_);
 void mem_st(RISC_mem* mem, u32 addr, u32 sz_, u32 value);
 
 RISC_mem *mem_init();

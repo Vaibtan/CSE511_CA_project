@@ -1,21 +1,21 @@
 #include "utils.hpp"
 #include "memory.hpp"
 
-u64 mem_ld_8(RISC_mem* mem, u32 addr){
-    return (u64) mem->rv32i_mem[addr - RISCV_MEM_BASE];
+u32 mem_ld_8(RISC_mem* mem, u32 addr){
+    return (u32) mem->rv32i_mem[addr - RISCV_MEM_BASE];
 }
-u64 mem_ld_16(RISC_mem* mem, u32 addr){
-    return (u64) mem->rv32i_mem[addr - RISCV_MEM_BASE]
-        |  (u64) mem->rv32i_mem[addr - RISCV_MEM_BASE + 1] << 8;
+u32 mem_ld_16(RISC_mem* mem, u32 addr){
+    return (u32) mem->rv32i_mem[addr - RISCV_MEM_BASE]
+        |  (u32) mem->rv32i_mem[addr - RISCV_MEM_BASE + 1] << 8;
 }
-u64 mem_ld_32(RISC_mem* mem, u32 addr){
-    return (u64) mem->rv32i_mem[addr - RISCV_MEM_BASE]
-        |  (u64) mem->rv32i_mem[addr - RISCV_MEM_BASE + 1] << 8
-        |  (u64) mem->rv32i_mem[addr - RISCV_MEM_BASE + 2] << 16 
-        |  (u64) mem->rv32i_mem[addr - RISCV_MEM_BASE + 3] << 24;
+u32 mem_ld_32(RISC_mem* mem, u32 addr){
+    return (u32) mem->rv32i_mem[addr - RISCV_MEM_BASE]
+        |  (u32) mem->rv32i_mem[addr - RISCV_MEM_BASE + 1] << 8
+        |  (u32) mem->rv32i_mem[addr - RISCV_MEM_BASE + 2] << 16 
+        |  (u32) mem->rv32i_mem[addr - RISCV_MEM_BASE + 3] << 24;
 }
 
-u64 mem_ld(RISC_mem* mem, u32 addr, u32 sz_) {
+u32 mem_ld(RISC_mem* mem, u32 addr, u32 sz_) {
     switch (sz_) {
         case 8:  return mem_ld_8(mem, addr);  break;
         case 16: return mem_ld_16(mem, addr); break;

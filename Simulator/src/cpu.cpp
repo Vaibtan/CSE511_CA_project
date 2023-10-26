@@ -2,12 +2,12 @@
 
 //PC reset and initialisation
 void CPU_reset(RISCV_cpu *cpu) {
-    cpu->x[0] = 0x00;                                   // register x0 hardwired to 0
-    cpu->x[2] = RISCV_MEM_BASE + RISCV_MEM_SIZE;        // Set stack pointer
     cpu->pc = RISCV_MEM_BASE;                           // Set program counter to the base address
-    cpu->x[1] = 0;                                      // return address
-    for(int i=3;i<REG_LEN;i++){
+    for(int i=0;i<REG_LEN;i++){
         cpu->x[i]=0;
+    }
+    for(int i=0;i<MM_REG_LEN;i++){
+        cpu->mem_map_reg[i]=0;
     }
     pipeline_reset(cpu->__pipe);
     cpu->__alu->flag_reset();
@@ -15,8 +15,8 @@ void CPU_reset(RISCV_cpu *cpu) {
 
 // cpu initialization
 RISCV_cpu* CPU_init() {
-    RISCV_cpu *cpu; 
-    if (cpu = (RISCV_cpu*) malloc(sizeof(RISCV_cpu))) {
+    RISCV_cpu *cpu= (RISCV_cpu*) malloc(sizeof(RISCV_cpu)); 
+    if (cpu ==NULL ) {
         fprintf(stderr, "[-] ERROR-> CPU_init: malloc failed\n");
         exit(1);
     }
@@ -39,37 +39,46 @@ RISCV_cpu* CPU_init() {
     return cpu;
 }
 
-//FETCH_STAGE
-void cpu_fetch(RISCV_cpu *cpu) {
-    if(cpu->__pipe->fetch->done)return;
-    cpu ->__pipe->fetch->inst = mem_bus_ld(cpu->__bus, cpu->pc, 32);
-    // cpu->__pipe->bypass->pcf=cpu->pc;
-    cpu->__pipe->fetch->done=true;
-}
-
-//Pc adder
-u32 pc_adder(RISCV_cpu*cpu,u32 a){
-    return cpu->pc+a;
-}
-
 //PC write function
 void fetch_pc_update(RISCV_cpu*cpu,u32 pc_new){
     cpu->pc=pc_new;
 }
 
+//FETCH_STAGE
+void cpu_fetch(RISCV_cpu *cpu,u32 new_pc,bool early_exit) {
+    if(early_exit){
+        fetch_pc_update(cpu,new_pc);
+    }
+    if(cpu->__pipe->fetch->done)return;
+    fetch_pc_update(cpu,new_pc);
+    cpu ->__pipe->fetch->inst = mem_bus_ld(cpu->__bus, cpu->pc, 32);
+    cpu->__pipe->fetch->pcf=cpu->pc;
+    cpu->__pipe->fetch->done=true;
+}
+
+//Pc adder
+u32 pc_adder(u32 b,u32 a){
+    return b+a;
+}
+
 //PC update function
-void cpu_pc_update(RISCV_cpu*cpu){
+u32 cpu_pc_update(RISCV_cpu*cpu){
+    u32 return_pc=0;
     if(cpu->__pipe->isbranch){
+        return_pc= pc_adder(cpu->__pipe->execute->pce,cpu->__pipe->newpc_offset);
+    }
+    else if(cpu->__pipe->isbranch2){
         if(cpu->__pipe->isjalr){
-            fetch_pc_update(cpu,cpu->__pipe->newpc_offset);
+            return_pc= cpu->__pipe->newpc_offset2;
         }
         else{
-            fetch_pc_update(cpu,pc_adder(cpu,cpu->__pipe->newpc_offset));
+            return_pc= pc_adder(cpu->__pipe->decode->pcd,cpu->__pipe->newpc_offset2);
         }
     }
     else
-    fetch_pc_update(cpu,pc_adder(cpu,4));
-    // cpu->__pipe->bypass->new_pc=cpu->pc;
+    return_pc= pc_adder(cpu->pc,4);
+    cpu->__pipe->bypass->new_pc=return_pc;
+    return return_pc;
 }
 
 //Helpr functions for decoding
@@ -102,7 +111,7 @@ ALWAYS_INLINE i32 imm_SB_TYPE(u32 instr__) {
 
 ALWAYS_INLINE i32 imm_U_TYPE(u32 instr__) {
     // imm[31:12] :: inst[31:12]
-    return (i32)((instr__ >>12 & 0xfffff000));
+    return (i32)((instr__ & 0xfffff000) >> 12);
 }
 ALWAYS_INLINE i32 imm_UJ_TYPE(u32 instr__) {
     // imm[20|10:1|11|19:12] :: inst[31|30:21|20|19:12]
@@ -136,7 +145,7 @@ void cpu_control_unit(RISCV_cpu *cpu,pipeline *pipe,u32 inst) {
         case RV32i_LUI:
             pipe->decode->inst=1;
             pipe->decode->rd=rd(inst);
-            pipe->decode->imm=(u32)(i32)(inst & 0xfffff000);
+            pipe->decode->imm=(i32)(inst & 0xfffff000);
             pipe->decode->iswrite=true;
             // LUI_exe(cpu, inst);
             break;
@@ -150,29 +159,28 @@ void cpu_control_unit(RISCV_cpu *cpu,pipeline *pipe,u32 inst) {
 
         case RV32i_JAL:
             pipe->decode->inst=3; 
-            pipe->isbranch=true;
-            pipe->newpc_offset= imm_UJ_TYPE(inst);
+            pipe->isbranch2=true;
+            pipe->newpc_offset2= imm_UJ_TYPE(inst);
             pipe->decode->rd=rd(inst);
             pipe->decode->iswrite=true;
-            pipe->decode->imm=cpu->pc;
-            pipe->branch_by_decode=true;
+            pipe->decode->imm=pipe->decode->pcd;
             // JAL_exe(cpu, inst);
             break;
         case RV32i_JALR:
             pipe->decode->inst=4; 
             pipe->decode->rd=rd(inst);
             pipe->decode->rs1=rs1(inst);
-            pipe->newpc_offset=imm_I_TYPE(inst);
-            pipe->newpc_offset=jalr_adder(pipe->newpc_offset,cpu->x[pipe->decode->rs1]);//Adding jalr offset
+            pipe->newpc_offset2=imm_I_TYPE(inst);
+            pipe->newpc_offset2=jalr_adder(pipe->newpc_offset,cpu->x[pipe->decode->rs1]);//Adding jalr offset
             pipe->decode->iswrite=true;
-            pipe->isbranch=true;
-            pipe->decode->imm=cpu->pc;
+            pipe->isbranch2=true;
+            pipe->decode->imm=pipe->decode->pcd;
             pipe->isjalr=true;
-            pipe->branch_by_decode=true;
             // JALR_exe(cpu, inst);
             break;
 
         case RV32i_SB_TYPE:
+            pipe->decode->isstype=true;
             switch (funct3) {
                 case BEQ:
                     pipe->decode->inst=5; 
@@ -232,7 +240,7 @@ void cpu_control_unit(RISCV_cpu *cpu,pipeline *pipe,u32 inst) {
                     pipe->decode->inst=11;
                     pipe->decode->rd=rd(inst);
                     pipe->decode->rs1=rs1(inst);
-                    pipe->decode->imm= imm_I_TYPE(inst); 
+                    pipe->decode->imm= imm_I_TYPE(inst);
                     // LB_exe(cpu, inst);
                     break;  
                 case LH  :  
@@ -272,6 +280,7 @@ void cpu_control_unit(RISCV_cpu *cpu,pipeline *pipe,u32 inst) {
             break;
 
         case RV32i_S_TYPE:
+            pipe->decode->isstype=true;
             pipe->decode->isstore=true;
             switch (funct3) {
                 case SB  :
@@ -490,7 +499,27 @@ void cpu_control_unit(RISCV_cpu *cpu,pipeline *pipe,u32 inst) {
         case 0x00:
             pipe->decode->inst=0;
             break;
-
+        case LD_ST_NOC:
+            pipe->decode->isnoc=true;
+            pipe->decode->isstore=true;
+            switch (funct3) {
+                case LOADNOC:
+                    pipe->decode->inst=38;
+                    pipe->decode->rs2=rs2(inst);
+                    pipe->decode->rs1=rs1(inst);
+                    pipe->decode->imm= imm_S_TYPE(inst);
+                    break;
+                case STORENOC:
+                    pipe->decode->inst=39;
+                    pipe->decode->imm= 1;
+                    break;
+                default:
+                    fprintf(stderr, 
+                            "[-] ERROR-> opcode:0x%x, funct3:0x%x, funct3:0x%x\n"
+                            , pipe->decode->inst, funct3, funct7);
+                    exit(1);
+            }
+            break;
         default:
             fprintf(stderr, 
                     "[-] ERROR-> opcode:0x%x, funct3:0x%x, funct3:0x%x\n"
@@ -524,61 +553,62 @@ void cpu_execute(RISCV_cpu *cpu){
             cpu->__pipe->execute->result=cpu->__pipe->execute->op2;
             break;
         case 2:
-            cpu->__pipe->execute->result=cpu->__alu->add((i32)cpu->__alu->sl((i32)cpu->__pipe->execute->op2,12),(i32)cpu->pc);
+            cpu->__pipe->execute->result=cpu->__alu->add((i32)cpu->__alu->sl((i32)cpu->__pipe->execute->op2,12),(i32)cpu->__pipe->execute->pce);
             break;
         case 3:
-            cpu->__pipe->execute->result=cpu->__alu->add(4,cpu->pc);
+            cpu->__pipe->execute->result=cpu->__alu->add(4,cpu->__pipe->execute->pce);
             break;
         case 4:
-            cpu->__pipe->execute->result=cpu->__alu->add(4,cpu->pc);
+            cpu->__pipe->execute->result=cpu->__alu->add(4,cpu->__pipe->execute->pce);
             break;
         case 5:
             cpu->__alu->compu(cpu->__pipe->execute->op1,cpu->__pipe->execute->op2);
-            if(cpu->__alu->getflag()&0x41==0x41){
+            if((cpu->__alu->getflag()&0x41)==0x41){
                 cpu->__pipe->isbranch=true;
-                cpu->__pipe->branch_by_decode=false;
                 cpu->__pipe->newpc_offset=cpu->__pipe->execute->rd;
             }
+            cpu->__pipe->execute->rd=34;
             break;
         case 6:
             cpu->__alu->compu(cpu->__pipe->execute->op1,cpu->__pipe->execute->op2);
-            if(cpu->__alu->getflag()&0x9==0x9){
+            if((cpu->__alu->getflag()&0x9)==0x9){
                 cpu->__pipe->isbranch=true;
-                cpu->__pipe->branch_by_decode=false;
                 cpu->__pipe->newpc_offset=cpu->__pipe->execute->rd;
             }
+            cpu->__pipe->execute->rd=34;
             break;
         case 7:
             cpu->__alu->comp((i32)cpu->__pipe->execute->op1,(i32)cpu->__pipe->execute->op2);
-            if(cpu->__alu->getflag()&0x21==0x21){
+            if((cpu->__alu->getflag()&0x21)==0x21){
                 cpu->__pipe->isbranch=true;
-                cpu->__pipe->branch_by_decode=false;
                 cpu->__pipe->newpc_offset=cpu->__pipe->execute->rd;
             }
+            cpu->__pipe->execute->rd=34;
             break;
         case 8:
             cpu->__alu->comp((i32)cpu->__pipe->execute->op1,(i32)cpu->__pipe->execute->op2);
-            if(cpu->__alu->getflag()&0x51==0x51){
+            if((cpu->__alu->getflag()&0x51)==0x41||(cpu->__alu->getflag()&0x51)==0x11){
                 cpu->__pipe->isbranch=true;
-                cpu->__pipe->branch_by_decode=false;
                 cpu->__pipe->newpc_offset=cpu->__pipe->execute->rd;
             }
+            
+            cpu->__pipe->execute->rd=34;
             break;
         case 9:
-            cpu->__alu->compu(cpu->__pipe->execute->op1,cpu->__pipe->execute->op2);
-            if(cpu->__alu->getflag()&0x21==0x21){
+            cpu->__alu->compu((u32)cpu->__pipe->execute->op1,(u32)cpu->__pipe->execute->op2);
+            if((cpu->__alu->getflag()&0x21)==0x21){
                 cpu->__pipe->isbranch=true;
-                cpu->__pipe->branch_by_decode=false;
                 cpu->__pipe->newpc_offset=cpu->__pipe->execute->rd;
             }
+            cpu->__pipe->execute->rd=34;
             break;
         case 10:
-            cpu->__alu->compu(cpu->__pipe->execute->op1,cpu->__pipe->execute->op2);
-            if(cpu->__alu->getflag()&0x51==0x51){
+            cpu->__alu->compu((u32)cpu->__pipe->execute->op1,(u32)cpu->__pipe->execute->op2);
+            if((cpu->__alu->getflag()&0x51)==0x41||(cpu->__alu->getflag()&0x51)==0x11){
                 cpu->__pipe->isbranch=true;
-                cpu->__pipe->branch_by_decode=false;
                 cpu->__pipe->newpc_offset=cpu->__pipe->execute->rd;
             }
+            cpu->__pipe->execute->rd=34;
             break;
         case 11:
             cpu->__pipe->execute->result=cpu->__alu->add((i32)cpu->__pipe->execute->op1,(i32)cpu->__pipe->execute->op2);
@@ -604,19 +634,25 @@ void cpu_execute(RISCV_cpu *cpu){
             break;
         case 16:
             cpu->__pipe->execute->result=cpu->__alu->add((i32)cpu->__pipe->execute->op1,(i32)cpu->__pipe->execute->rd);
+            cpu->__pipe->execute->size=8;
+            cpu->__pipe->execute->rd=34;
             break;
         case 17:
             cpu->__pipe->execute->result=cpu->__alu->add((i32)cpu->__pipe->execute->op1,(i32)cpu->__pipe->execute->rd);
+            cpu->__pipe->execute->size=16;
+            cpu->__pipe->execute->rd=34;
             break;
         case 18:
             cpu->__pipe->execute->result=cpu->__alu->add((i32)cpu->__pipe->execute->op1,(i32)cpu->__pipe->execute->rd);
+            cpu->__pipe->execute->size=32;
+            cpu->__pipe->execute->rd=34;
             break;
         case 19:
             cpu->__pipe->execute->result=cpu->__alu->add((i32)cpu->__pipe->execute->op1,(i32)cpu->__pipe->execute->op2);
             break;
         case 20:
             cpu->__alu->comp((i32)cpu->__pipe->execute->op1,(i32)cpu->__pipe->execute->op2);
-            if(cpu->__alu->getflag()&0x21==0x21){
+            if((cpu->__alu->getflag()&0x21)==0x21){
                 cpu->__pipe->execute->result=1;
             }
             else {
@@ -625,7 +661,7 @@ void cpu_execute(RISCV_cpu *cpu){
             break;
         case 21:
             cpu->__alu->compu((u32)cpu->__pipe->execute->op1,(u32)cpu->__pipe->execute->op2);
-            if(cpu->__alu->getflag()&0x21==0x21){
+            if((cpu->__alu->getflag()&0x21)==0x21){
                 cpu->__pipe->execute->result=1;
             }
             else {
@@ -654,14 +690,14 @@ void cpu_execute(RISCV_cpu *cpu){
             cpu->__pipe->execute->result=cpu->__alu->add((i32)cpu->__pipe->execute->op1,(i32)cpu->__pipe->execute->op2);
             break;
         case 29:
-            cpu->__pipe->execute->result=cpu->__alu->sub((i32)cpu->__pipe->execute->op1,-(i32)cpu->__pipe->execute->op2);
+            cpu->__pipe->execute->result=cpu->__alu->sub((i32)cpu->__pipe->execute->op1,(i32)cpu->__pipe->execute->op2);
             break;
         case 30:
             cpu->__pipe->execute->result=cpu->__alu->sl((i32)cpu->__pipe->execute->op1,(i32)cpu->__pipe->execute->op2);
             break;
         case 31:
             cpu->__alu->comp((i32)cpu->__pipe->execute->op1,(i32)cpu->__pipe->execute->op2);
-            if(cpu->__alu->getflag()&0x21==0x21){
+            if((cpu->__alu->getflag()&0x21)==0x21){
                 cpu->__pipe->execute->result=1;
             }
             else {
@@ -670,7 +706,7 @@ void cpu_execute(RISCV_cpu *cpu){
             break;
         case 32:
             cpu->__alu->compu((u32)cpu->__pipe->execute->op1,(u32)cpu->__pipe->execute->op2);
-            if(cpu->__alu->getflag()&0x21==0x21){
+            if((cpu->__alu->getflag()&0x21)==0x21){
                 cpu->__pipe->execute->result=1;
             }
             else {
@@ -692,6 +728,16 @@ void cpu_execute(RISCV_cpu *cpu){
         case 37:
             cpu->__pipe->execute->result=cpu->__alu->andi((i32)cpu->__pipe->execute->op1,(i32)cpu->__pipe->execute->op2);
             break;
+        case 38: //LoadNOC
+            cpu->__pipe->execute->result=cpu->__alu->add((i32)cpu->__pipe->execute->op1,(i32)cpu->__pipe->execute->rd);
+            cpu->__pipe->execute->size=32;
+            cpu->__pipe->execute->rd=34;
+            break;
+        case 39: //STORENOC
+            cpu->__pipe->execute->result=4;
+            cpu->__pipe->execute->size=32;
+            cpu->__pipe->execute->rd=34;
+            break;
         default:
         fprintf(stderr, 
                 "[-] ERROR-> inst%d\n"
@@ -699,40 +745,50 @@ void cpu_execute(RISCV_cpu *cpu){
         exit(1);
     }
     cpu->__alu->flag_reset();
-    // cpu->__pipe->bypass->res_exec = cpu->__pipe->execute->result;
-    // cpu->__pipe->bypass->rde = cpu->__pipe->execute->rd;
+    cpu->__pipe->bypass->res_exec = cpu->__pipe->execute->result;
+    cpu->__pipe->bypass->rde = cpu->__pipe->execute->rd;
     cpu->__pipe->execute->done=true;
 }
 
 //Helper Function for load and store
-u64 cpu_ld(RISCV_cpu* cpu, u64 addr, u64 size) {
+u32 cpu_ld(RISCV_cpu* cpu, u32 addr, u32 size) {
     return mem_bus_ld((cpu->__bus), addr, size);
 }
-void cpu_st(RISCV_cpu* cpu, u64 addr, u64 size, u64 value) {
+void cpu_st(RISCV_cpu* cpu, u32 addr, u32 size, u32 value) {
     mem_bus_st((cpu->__bus), addr, size, value);
 }
 
 //Memory_stage
 void cpu_memory(RISCV_cpu *cpu){
     if(cpu->__pipe->memory->done)return;
+    if(cpu->__pipe->memory->isnoc){
+        cpu->mem_map_reg[cpu->__pipe->memory->addr]=cpu->__pipe->memory->value;
+        cpu->__pipe->memory->done=true;
+        return;
+    }
     if(cpu->__pipe->memory->isload){
         if(cpu->__pipe->memory->usign)
-        cpu->__pipe->memory->value=(u32)cpu_ld(cpu,cpu->__pipe->memory->addr,cpu->__pipe->memory->size);
+        cpu->__pipe->memory->value=cpu_ld(cpu,cpu->__pipe->memory->addr,cpu->__pipe->memory->size);
         else{
-            if(cpu->__pipe->memory->size==8)
-            cpu->__pipe->memory->value=(i32)(i8)cpu_ld(cpu,cpu->__pipe->memory->addr,cpu->__pipe->memory->size);
-            else if(cpu->__pipe->memory->size==16)
-            cpu->__pipe->memory->value=(i32)(i16)cpu_ld(cpu,cpu->__pipe->memory->addr,cpu->__pipe->memory->size);
-            else
-            cpu->__pipe->memory->value=(i32)cpu_ld(cpu,cpu->__pipe->memory->addr,cpu->__pipe->memory->size);
+            if(cpu->__pipe->memory->size==8){
+                cpu->__pipe->memory->value=(i32)(i8)cpu_ld(cpu,cpu->__pipe->memory->addr,cpu->__pipe->memory->size);
+            }
+            else if(cpu->__pipe->memory->size==16){
+                cpu->__pipe->memory->value=(i32)(i16)cpu_ld(cpu,cpu->__pipe->memory->addr,cpu->__pipe->memory->size);
+            }
+            else{
+                cpu->__pipe->memory->value=(i32)cpu_ld(cpu,cpu->__pipe->memory->addr,cpu->__pipe->memory->size);
+            }
+            
         }
+        
     }
     if(cpu->__pipe->memory->isstore){
         cpu_st(cpu,cpu->__pipe->memory->addr,cpu->__pipe->memory->size,cpu->__pipe->memory->value);
-        
     }
-    // cpu->__pipe->bypass->res_mem = cpu->__pipe->memory->value;
-    // cpu->__pipe->bypass->rdm = cpu->__pipe->memory->rd;
+    cpu->__pipe->bypass->res_mem = cpu->__pipe->memory->value;
+    cpu->__pipe->bypass->rdm = cpu->__pipe->memory->rd;
+    
     cpu->__pipe->memory->done=true;
 }
 

@@ -1,6 +1,9 @@
 #ifndef INSTRUCTION_H
 #define INSTRUCTION_H
 
+#define LD_ST_NOC 0b0000111
+    #define LOADNOC 0X0
+    #define STORENOC 0X1
 #define RV32i_LUI 0x37
 #define RV32i_AUIPC 0x17
 #define RV32i_JAL 0x6f
@@ -52,6 +55,7 @@
         #define SRA 0x20
     #define OR 0x6
     #define AND 0x7
+
 
 #endif
 

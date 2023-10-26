@@ -20,8 +20,8 @@ void logValues(FILE* file, RISCV_cpu *cpu, pipeline* pipe) {
     fprintf(file, "\n");
     fprintf(file, "CPU Context:\n");
     RegValues(file, cpu);
-    fprintf(file, "Memory state:\n");
-    memstate(file, cpu);
+    // fprintf(file, "Memory state:\n");
+    // memstate(file, cpu);
     fprintf(file, "\n");
     fprintf(file, "****************************************************************************\n");
 }

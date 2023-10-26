@@ -1,32 +1,39 @@
-#include "cpu.hpp"
-// include logging header
-#include "LogFile.cpp"
+#include "LogFile.hpp"
 
 void start(RISCV_cpu *cpu,u32 INST_END){
-    FILE* fp = fopen("logfile.log","a");
+    FILE* fp = fopen("../logs/logfile.log","a");
     if(fp==NULL){
         fprintf(stderr,"Error in opening logfile\n");
         exit(1);
     }
     fprintf(fp, "****************************************************************************\n");
-    fprintf(fp, "*****************************RISCV SIMULATOR*******************************\n");
+    fprintf(fp, "******************************RISCV SIMULATOR*******************************\n");
     time_t t = time(NULL);
     struct tm *tm = localtime(&t);
     fprintf(fp, "Date and Time: %s\n", asctime(tm) );
     fprintf(fp, "\n");
-    while(cpu->pc<INST_END){
-        cpu_fetch(cpu);
-        cpu_decode(cpu);
-        cpu_execute(cpu);
-        cpu_memory(cpu);
-        cpu_writeback(cpu);
-        cpu_pc_update(cpu);
-        // call savelog(cpu, pipe)
-        logValues(fp,cpu, cpu->__pipe);
-        // statechange(cpu->__pipe);
-        statechange_withoutBYPASSING(cpu->__pipe);
-        cpu->__pipe->cycle+=1;
+    bool notend=true;
+    u32 new_pc=0x0;
+    bool over=false;
+    int extracycle=1;
+    if(INST_END==0){
+        extracycle=0;
+        notend=false;
     }
+    while(notend || extracycle--){
+        cpu_writeback(cpu);
+        cpu_memory(cpu);
+        cpu_execute(cpu);
+        cpu_decode(cpu);
+        cpu_fetch(cpu,new_pc ,((cpu->pc+4 != new_pc)&&over));
+        logValues(fp,cpu, cpu->__pipe);
+        new_pc=cpu_pc_update(cpu);
+        over=(new_pc>=INST_END);
+        // notend=statechange_withoutBYPASSING(cpu->__pipe,over); // without bypassing logic
+        notend=statechange(cpu->__pipe,&new_pc,over); // with bypassing logic
+    }
+    fprintf(fp, "****************************RISCV SIMULATOR END*****************************\n");
+    fprintf(fp, "****************************************************************************\n");
     fclose(fp);
 }
 u32 load_Instrucctions_in_memory(RISCV_cpu* cpu,char* path){
@@ -35,18 +42,21 @@ u32 load_Instrucctions_in_memory(RISCV_cpu* cpu,char* path){
         fprintf(stderr,"Error in opening binary file\n");
         exit(1);
     }
-    u32  INST_END= 0;
+    
+    u32  INST_END= RISCV_MEM_BASE;
     u32 INST = 0;
     while(fread(&INST,sizeof(u32),1,fp)){
-        cpu_st(cpu, INST_END, 32, INST);// to be checked
+        cpu_st(cpu, INST_END, 32, INST);
         INST_END+=4;
     }
     fclose(fp);
+    // To debug ld and store
+    // cpu_st(cpu, 87, 32, 0xf1f2);
     return INST_END;
+    
 }
 
 int main(int argc, char* argv[]){
-
     RISCV_cpu* mycpu = CPU_init(); 
     if(argc!=2){
         fprintf(stderr,"No input to simulator: <path to bin file missing> command line arguments no-> %d\n",argc);
