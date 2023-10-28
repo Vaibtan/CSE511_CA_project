@@ -1,6 +1,7 @@
 #ifndef CPU_H
 #define CPU_H
 
+#include "utils.hpp"
 #include "instruction.hpp"
 #include "pipeline.hpp"
 #include "membus.hpp"
