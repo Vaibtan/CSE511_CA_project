@@ -3,12 +3,8 @@
 //PC reset and initialisation
 void CPU_reset(RISCV_cpu *cpu) {
     cpu->pc = RISCV_MEM_BASE;                           // Set program counter to the base address
-    for(int i=0;i<REG_LEN;i++){
-        cpu->x[i]=0;
-    }
-    for(int i=0;i<MM_REG_LEN;i++){
-        cpu->mem_map_reg[i]=0;
-    }
+    REP(__i, 0, REG_LEN){ cpu->x[i]=0; }
+    REP(__i, 0, MM_REG_LEN){ cpu->mem_map_reg[i]=0; }
     pipeline_reset(cpu->__pipe);
     cpu->__alu->flag_reset();
 }
@@ -40,15 +36,11 @@ RISCV_cpu* CPU_init() {
 }
 
 //PC write function
-void fetch_pc_update(RISCV_cpu*cpu,u32 pc_new){
-    cpu->pc=pc_new;
-}
+void fetch_pc_update(RISCV_cpu*cpu,u32 pc_new){ cpu->pc=pc_new; }
 
 //FETCH_STAGE
 void cpu_fetch(RISCV_cpu *cpu,u32 new_pc,bool early_exit) {
-    if(early_exit){
-        fetch_pc_update(cpu,new_pc);
-    }
+    if(early_exit){ fetch_pc_update(cpu,new_pc); }
     if(cpu->__pipe->fetch->done)return;
     fetch_pc_update(cpu,new_pc);
     cpu ->__pipe->fetch->inst = mem_bus_ld(cpu->__bus, cpu->pc, 32);
@@ -56,7 +48,6 @@ void cpu_fetch(RISCV_cpu *cpu,u32 new_pc,bool early_exit) {
     cpu->__pipe->fetch->done=true;
 }
 
-//Pc adder
 u32 pc_adder(u32 b,u32 a){
     return b+a;
 }
