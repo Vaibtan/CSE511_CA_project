@@ -7,22 +7,22 @@
 #define RISCV_MEM_SIZE 1024 * 64     //MEMORY_SIZE OF 64kB
 // #define RISCV_MEM_BASE 0x10000 // 65536
 #define RISCV_MEM_BASE 0 // 65536
-typedef struct RISC_mem{
-    u8 rv32i_mem[RISCV_MEM_SIZE];
-} RISC_mem;
+typedef struct RISC_DATA_mem{
+    u8 rv32i_data_mem[RISCV_MEM_SIZE];
+} DATA_mem;
 
-typedef struct RISC_instr_mem{
+typedef struct RISC_INSTR_mem{
     u32 rv32i_instr_mem[RISCV_MEM_SIZE];
-} RISC_instr_mem;
+} INSTR_mem;
 
-u32 mem_ld(RISC_mem* mem, u32 addr, u32 sz_);
-void mem_st(RISC_mem* mem, u32 addr, u32 sz_, u32 value);
+u32 mem_ld(DATA_mem* data_mem, u32 addr, u32 sz_);
+void mem_st(DATA_mem* data_mem, u32 addr, u32 sz_, u32 value);
 
-u32 instr_mem_ld(RISC_instr_mem* mem, u32 addr, u32 sz_);
-void instr_mem_st(RISC_instr_mem* mem, u32 addr, u32 sz_, u32 value);
+u32 instr_mem_ld(INSTR_mem* instr_mem, u32 addr, u32 sz_);
+void instr_mem_st(INSTR_mem* instr_mem, u32 addr, u32 sz_, u32 value);
 
-RISC_mem *mem_init();
-RISC_instr_mem *instr_mem_init();
+DATA_mem *data_init();
+INSTR_mem *instr_init();
 #endif
 /**
 class RISC_mem {

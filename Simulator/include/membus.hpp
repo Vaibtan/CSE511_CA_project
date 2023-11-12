@@ -3,12 +3,19 @@
 #include "utils.hpp"
 #include "memory.hpp"
 
-struct MEM_BUS {
-    struct RISC_mem* riscv_mem;
+struct DATA_MEM_BUS {
+    struct RISC_DATA_mem* data_mem;
 };
 
-u32 mem_bus_ld(MEM_BUS* __bus, u32 addr, u32 size);
-void mem_bus_st(MEM_BUS* __bus, u32 addr, u32 size, u32 value);
-MEM_BUS* mem_bus_init(RISC_mem* mem);
+struct INSTR_MEM_BUS {
+    struct RISC_INSTR_mem* instr_mem;
+};
 
+u32 data_bus_ld(DATA_MEM_BUS* _bus, u32 addr, u32 size);
+void data_bus_st(DATA_MEM_BUS* _bus, u32 addr, u32 size, u32 value);
+DATA_MEM_BUS* data_bus_init(RISC_DATA_mem* data_mem);
+
+u32 instr_bus_ld(INSTR_MEM_BUS* _bus, u32 addr, u32 size);
+void instr_bus_st(INSTR_MEM_BUS* _bus, u32 addr, u32 size, u32 value);
+INSTR_MEM_BUS* instr_bus_init(RISC_INSTR_mem* instr_mem);
 #endif
