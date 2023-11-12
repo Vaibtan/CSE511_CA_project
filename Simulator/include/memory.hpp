@@ -11,11 +11,18 @@ typedef struct RISC_mem{
     u8 rv32i_mem[RISCV_MEM_SIZE];
 } RISC_mem;
 
+typedef struct RISC_instr_mem{
+    u32 rv32i_instr_mem[RISCV_MEM_SIZE];
+} RISC_instr_mem;
 
 u32 mem_ld(RISC_mem* mem, u32 addr, u32 sz_);
 void mem_st(RISC_mem* mem, u32 addr, u32 sz_, u32 value);
 
+u32 instr_mem_ld(RISC_instr_mem* mem, u32 addr, u32 sz_);
+void instr_mem_st(RISC_instr_mem* mem, u32 addr, u32 sz_, u32 value);
+
 RISC_mem *mem_init();
+RISC_instr_mem *instr_mem_init();
 #endif
 /**
 class RISC_mem {
