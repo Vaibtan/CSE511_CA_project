@@ -3,8 +3,8 @@
 //PC reset and initialisation
 void CPU_reset(RISCV_cpu *cpu) {
     cpu->pc = RISCV_MEM_BASE;                           // Set program counter to the base address
-    REP(__i, 0, REG_LEN){ cpu->x[i]=0; }
-    REP(__i, 0, MM_REG_LEN){ cpu->mem_map_reg[i]=0; }
+    REP(_z, 0, REG_LEN){ cpu->x[_z]=0; }
+    REP(_z, 0, MM_REG_LEN){ cpu->mem_map_reg[_z]=0; }
     pipeline_reset(cpu->__pipe);
     cpu->__alu->flag_reset();
 }

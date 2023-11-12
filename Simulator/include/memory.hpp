@@ -15,14 +15,15 @@ typedef struct RISC_INSTR_mem{
     u32 rv32i_instr_mem[RISCV_MEM_SIZE];
 } INSTR_mem;
 
-u32 mem_ld(DATA_mem* data_mem, u32 addr, u32 sz_);
-void mem_st(DATA_mem* data_mem, u32 addr, u32 sz_, u32 value);
+u32 d_mem_ld(DATA_mem* data_mem, u32 addr, u32 sz_);
+void d_mem_st(DATA_mem* data_mem, u32 addr, u32 sz_, u32 value);
 
-u32 instr_mem_ld(INSTR_mem* instr_mem, u32 addr, u32 sz_);
-void instr_mem_st(INSTR_mem* instr_mem, u32 addr, u32 sz_, u32 value);
+u32 i_mem_ld(INSTR_mem* instr_mem, u32 addr, u32 sz_);
+void i_mem_st(INSTR_mem* instr_mem, u32 addr, u32 sz_, u32 value);
 
 DATA_mem *data_init();
 INSTR_mem *instr_init();
+
 #endif
 /**
 class RISC_mem {

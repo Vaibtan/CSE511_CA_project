@@ -4,6 +4,7 @@
 #define LD_ST_NOC 0b0000111
     #define LOADNOC 0X0
     #define STORENOC 0X1
+
 #define RV32i_LUI 0x37
 #define RV32i_AUIPC 0x17
 #define RV32i_JAL 0x6f
@@ -15,7 +16,7 @@
     #define LW 0x2
     #define LBU 0x4
     #define LHU 0x5
- 
+
 
 #define RV32i_SB_TYPE 0x63
     #define BEQ 0x0
