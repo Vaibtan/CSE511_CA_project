@@ -810,11 +810,12 @@ void cpu_writeback(RISCV_cpu*cpu){
 }
 
 
-FILE *counter_file = fopen("counters.txt", "w");
-if (counter_file != NULL) {
-    fprintf(counter_file, "%u %u", cpu->register_instr_counter, cpu->memory_instr_counter);
-    fclose(counter_file);
-} else {
-    fprintf(stderr, "[-] ERROR-> Unable to open counters.txt for writing\n");
-    exit(1);
-}
+    FILE *counter_file = fopen("counters.txt", "w");
+    if (counter_file != NULL) {
+        fprintf(counter_file, "%u %u", cpu->register_instr_counter, cpu->memory_instr_counter);
+        fclose(counter_file);
+    }
+    else {
+        fprintf(stderr, "[-] ERROR-> Unable to open counters.txt for writing\n");
+        exit(1);
+    }
