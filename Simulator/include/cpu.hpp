@@ -18,6 +18,8 @@ struct RISCV_cpu{
     struct MEM_BUS* __bus;
     struct pipeline* __pipe;
     ALU* __alu;
+    int memory_instr_counter;
+    int register_instr_counter;
 };
 
 RISCV_cpu* CPU_init();
