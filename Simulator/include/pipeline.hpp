@@ -57,12 +57,14 @@ struct mem_unit{
     u32 rd; //buffer for rd
     bool usign; //unsigned
     bool done; //executed once?
+    u8 inst; //insttype
 };
 struct wb_unit{
     bool iswrite;//signal(write to regfile)
     u32 rd; //reg to write
     u32 imm;  // value to write
     bool done; //executed once?
+    u8 inst; //insttype
 };
 
 struct bypassreg{
@@ -88,7 +90,6 @@ struct pipeline{
     struct bypassreg* bypass; //bypass register 
     bool de_stall; //stall decode?
     bool ex_stall; //stall execute?
-    int data_stall_counter;
 };
 
 
