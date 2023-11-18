@@ -131,6 +131,7 @@ void pipeline_reset(pipeline *pipe){
     pipe->newpc_offset2=4;
     pipe->de_stall=false;
     pipe->ex_stall=false;
+    pipe->data_stall_counter = 0;
 }
 
 void changef_to_d(pipeline *pipe){
