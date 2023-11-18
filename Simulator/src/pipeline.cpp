@@ -92,6 +92,7 @@ void execute_reset(exec_unit *execute){
 }
 
 void memory_reset(mem_unit *memory){
+    memory->inst = 0;
     memory->addr = 0;
     memory->size = 0;
     memory->value = 0;
@@ -106,6 +107,7 @@ void memory_reset(mem_unit *memory){
 }
 
 void writeback_reset(wb_unit *writeback){
+    writeback->inst = 0;
     writeback->rd = 0;
     writeback->imm = 0;
     writeback->done=false;
@@ -131,7 +133,6 @@ void pipeline_reset(pipeline *pipe){
     pipe->newpc_offset2=4;
     pipe->de_stall=false;
     pipe->ex_stall=false;
-    pipe->data_stall_counter = 0;
 }
 
 void changef_to_d(pipeline *pipe){
@@ -191,6 +192,7 @@ void changeex_to_m(pipeline *pipe){
     pipe->memory->isstore = pipe->execute->isstore;
     pipe->memory->iswrite = pipe->execute->iswrite;
     pipe->memory->isnoc = pipe->execute->isnoc;
+    pipe->memory->inst = pipe->execute->inst;
     pipe->memory->isstype = pipe->execute->isstype;
     if(pipe->memory->isstore){
         pipe->memory->addr = pipe->execute->result;
@@ -206,6 +208,7 @@ void changeex_to_m(pipeline *pipe){
 }
 
 void changem_to_wb(pipeline *pipe){
+    pipe->writeback->inst = pipe->memory->inst;
     pipe->writeback->rd = pipe->memory->rd;
     pipe->writeback->imm = pipe->memory->value;
     pipe->writeback->iswrite = pipe->memory->iswrite;
