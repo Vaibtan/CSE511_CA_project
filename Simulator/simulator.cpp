@@ -29,8 +29,11 @@ void start(RISCV_cpu *cpu,u32 INST_END){
         logValues(fp,cpu, cpu->__pipe);
         new_pc=cpu_pc_update(cpu);
         over=(new_pc>=INST_END);
-        // notend=statechange_withoutBYPASSING(cpu->__pipe,over); // without bypassing logic
-        notend=statechange(cpu->__pipe,&new_pc,over); // with bypassing logic
+        notend=statechange_withoutBYPASSING(cpu->__pipe,over); // without bypassing logic
+        // notend=statechange(cpu->__pipe,&new_pc,over); // with bypassing logic
+        if(cpu->__pipe->cycle>20){
+            exit(1);
+        }
     }
     fprintf(fp, "****************************RISCV SIMULATOR END*****************************\n");
     fprintf(fp, "****************************************************************************\n");
@@ -43,10 +46,10 @@ u32 load_Instrucctions_in_memory(RISCV_cpu* cpu,char* path){
         exit(1);
     }
     
-    u32  INST_END= RISCV_MEM_BASE;
+    u32  INST_END= RISCV_MEM_BASE_INSTR;
     u32 INST = 0;
     while(fread(&INST,sizeof(u32),1,fp)){
-        cpu_st(cpu, INST_END, 32, INST);
+        instr_bus_st(cpu->__bus->instr_bus, INST_END ,32,INST);
         INST_END+=4;
     }
     fclose(fp);
