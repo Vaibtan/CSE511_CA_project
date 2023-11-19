@@ -6,7 +6,6 @@
 #include "pipeline.hpp"
 #include "membus.hpp"
 #include "ALU.hpp"
-#include "LRU_cache.hpp"
 
 #define REG_LEN 32
 #define MM_REG_LEN 5
