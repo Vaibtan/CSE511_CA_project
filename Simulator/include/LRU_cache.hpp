@@ -4,7 +4,6 @@
 #include "utils.hpp"
 
 #define MA 0xffffffff
-#define __lg(x) (31 - __builtin_clz(x))
 
 /**
 OFFSET_ADDR :: lg(CACHE_LINE_SZ) :: lg(4) = 2 bits
@@ -24,14 +23,18 @@ private:
     int blk_SZ;
     std::vector<u32> tag;
     std::vector<std::vector<std::vector<u32>>> data;
-    vector<int> count;
-    vector<bool> empty;
+    std::vector<int> count;
+    std::vector<bool> empty;
 
 public:
     set_associative(int assoc, int cache_line, int blk_SZ);
     void __incre__();
-    std::optional<u32> cache_read(u32 addr, u32 set_addr, u32 off);
-    void cache_write(u32 addr, u32 set_addr, u32 off, u32 _val);
+    std::optional<u32> cache_read(u32 byte_ADDR, u32 set_ADDR, u32 off);
+    //off = bin_to_val(ADDR_STR.substr(32 - __lg(blk_SZ), __lg(blk_SZ)));
+    //set_addr = bin_to_val(ADDR_STR.substr(32 - __lg(blk_SZ) - __lg(c_l / assoc), __lg(c_l / assoc)));
+    //byte_addr = bin_to_val(ADDR_STR.substr(0, 32 - __lg(blk_SZ) - __lg(c_l / assoc)));
+    
+    void cache_write(u32 byte_ADDR, u32 set_ADDR, u32 off, u32 _val);
     void __print__();
 };
 

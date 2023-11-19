@@ -2,23 +2,43 @@
 
 using namespace std;
 
+u32 bin_pow(u32 __bs, u32 __exp) {
+    u32 __res = 1;
+    while (__exp > 0) {
+        if (__exp & 1)
+            __res = __res * __bs;
+        __bs = __bs * __bs;
+        __exp >>= 1;
+    }
+    return __res;
+}
+
+u32 bin_to_val(string __s){
+	u32 __res = 0;
+	u32 __len = __s.length();
+	REP(_z, 0, __len){ __res += (__s[_z] - '0') * bin_pow(2, __len - _z - 1); }
+	return __res;
+}
+
+
 string val_to_bin(u32 __v, u32 __SZ){
-    string ans = "";
+    string __res = "";
     if (!__v) { return make_sz("0", __SZ); }
     while(__v > 0) {
-	    ans += char(__v % 2 + 48);
+	    __res += char(__v % 2 + 48);
 	    __v/=2;
     }
-    reverse(all(ans));
-    return make_sz(ans, __SZ);
+    reverse(all(__res));
+    return make_sz(__res, __SZ);
 }
 
 string make_sz(string __s, u32 __SZ) {
-    string ans = "";
-    REP(_z, 0, (int)(__SZ - __s.length())) ans += '0';
-    ans += __s;
-    return ans;
+    string __res = "";
+    REP(_z, 0, (int)(__SZ - __s.length())) __res += '0';
+    __res += __s;
+    return __res;
 }
+
 set_associative::set_associative(int __asc, int c_l, int blk_SZ)
 {
     this->assoc = __asc;
@@ -39,23 +59,23 @@ void set_associative::__incre__(){
 	}
 }  
 
-optional<u32> set_associative::cache_read(u32 addr, u32 set_addr, u32 off) {
+optional<u32> set_associative::cache_read(u32 byte_ADDR, u32 set_ADDR, u32 off) {
 	__incre__();
 	REP(_z, 0, assoc) {
-	    if (!empty[set_addr * assoc + _z] && tag[set_addr * assoc + _z] == addr) {
-		count[set_addr * assoc + _z] = 0;
-		return data[set_addr][_z][off];
+	    if (!empty[set_ADDR * assoc + _z] && tag[set_ADDR * assoc + _z] == byte_ADDR) {
+		count[set_ADDR * assoc + _z] = 0;
+		return data[set_ADDR][_z][off];
 	    }
 	}
 	return -1;
 }
 
-void set_associative::cache_write(u32 addr, u32 set_addr, u32 off, u32 _val) {
+void set_associative::cache_write(u32 byte_ADDR, u32 set_ADDR, u32 off, u32 _val) {
 	__incre__();
 	REP(_z, 0, assoc){
-	    if (!empty[set_addr * assoc + _z] && tag[set_addr * assoc + _z] == addr) {
-		    data[set_addr][_z][off] = _val;
-		    count[set_addr * assoc + _z] = 0;
+	    if (!empty[set_ADDR * assoc + _z] && tag[set_ADDR * assoc + _z] == byte_ADDR) {
+		    data[set_ADDR][_z][off] = _val;
+		    count[set_ADDR * assoc + _z] = 0;
 		    return;
 	    }
 	}
@@ -63,27 +83,27 @@ void set_associative::cache_write(u32 addr, u32 set_addr, u32 off, u32 _val) {
 	int u_lim {0}, idx {-1};
 	REP(_z, 0, assoc) {
 	    // [set_addr * assoc + iter] MAP (iter) ELEMS OFF set_addr-th SET TO ITS IDX IN empty, tag, count ARR
-	    if (empty[set_addr * assoc + _z]) {
-		    count[set_addr * assoc + _z] = 0;
-		    tag[set_addr * assoc + _z] = addr;
-		    empty[set_addr * assoc + _z] = false;
+	    if (empty[set_ADDR * assoc + _z]) {
+		    count[set_ADDR * assoc + _z] = 0;
+		    tag[set_ADDR * assoc + _z] = byte_ADDR;
+		    empty[set_ADDR * assoc + _z] = false;
 		    REP(_j, 0, blk_SZ){
-		        if (_j == off) { data[set_addr][_z][_j] = _val; }
-                else{ data[set_addr][_z][_j] = 0; }
+		        if (_j == off) { data[set_ADDR][_z][_j] = _val; }
+                else{ data[set_ADDR][_z][_j] = 0; }
 		    }
 		    return;
 	    }else {
-		if (count[set_addr * assoc + _z] > u_lim) {
-		        u_lim = count[set_addr * assoc + _z];
+		if (count[set_ADDR * assoc + _z] > u_lim) {
+		        u_lim = count[set_ADDR * assoc + _z];
 		        idx = _z;
 		    }
 	    }
 	}
-	count[set_addr * assoc + idx] = 0;
-	tag[set_addr * assoc + idx] = addr;
+	count[set_ADDR * assoc + idx] = 0;
+	tag[set_ADDR * assoc + idx] = byte_ADDR;
 	REP(_z, 0, blk_SZ) {
-	    if (_z == off) { data[set_addr][idx][_z] = _val; }
-        else { data[set_addr][idx][_z] = 0; }
+	    if (_z == off) { data[set_ADDR][idx][_z] = _val; }
+        else { data[set_ADDR][idx][_z] = 0; }
     }
 }
     
