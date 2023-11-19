@@ -1,22 +1,40 @@
 #include "LogFile.hpp"
 
 void memstate(FILE* file, RISCV_cpu* cpu, pipeline* pipe) {
-    fprintf(file, "Memory location  :   Data\n");
     mem_unit* mem_stage = pipe->memory;
 
-    // Check if the program has completed (memory stage is done)
+    // memory stage is done
     if (mem_stage->done) {
-        for (int i = 0; i < RISCV_MEM_SIZE; i++) {
-            fprintf(file, "0x%x     :   0x%x\n", i, cpu->__bus->riscv_mem->rv32i_mem[i]);
-        }
+        // Open a file to store memory access pattern
+        FILE* memory_access_file = fopen("memory_access_pattern.txt", "w");
+        if (memory_access_file != NULL) {
+            fprintf(memory_access_file, "Memory Location,Data\n");
 
-        // Print memory information for the specific address and data in the memory stage
-        fprintf(file, "\nMemory Stage Information:\n");
-        fprintf(file, "Address: 0x%x\n", mem_stage->addr);
-        fprintf(file, "Data   : 0x%x\n", mem_stage->value);
+            // Print memory information for the entire memory range
+            for (int i = 0; i < RISCV_MEM_SIZE; i++) {
+                fprintf(memory_access_file, "0x%x,%u\n", i, cpu->__bus->riscv_mem->rv32i_mem[i]);
+            }
+
+            // Print memory information for the specific address and data in the memory stage
+            fprintf(memory_access_file, "\nMemory Stage Information:\n");
+            fprintf(memory_access_file, "Address: 0x%x\n", mem_stage->addr);
+            fprintf(memory_access_file, "Data   : 0x%x\n", mem_stage->value);
+
+            fclose(memory_access_file);
+        }
     }
 }
 
+void save_counters_to_file(FILE* file, RISCV_cpu* cpu) {
+    fprintf(file, "Register Instructions: %u\n", cpu->register_instr_counter);
+    fprintf(file, "Memory Instructions: %u\n", cpu->memory_instr_counter);
+}
+
+void save_counters(RISCV_cpu* cpu) {
+    FILE *counter_file = fopen("counters.txt", "w");
+    save_counters_to_file(counter_file, cpu);
+    fclose(counter_file);
+}
 
 
 void RegValues(FILE* file, RISCV_cpu* cpu){
@@ -69,4 +87,6 @@ void logValues(FILE* file, RISCV_cpu *cpu, pipeline* pipe) {
     pipelineValues(file, cpu, pipe);
 
     isStall(file, cpu, pipe);
+
+    save_counters(cpu);
 }
