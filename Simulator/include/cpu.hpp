@@ -15,7 +15,6 @@ struct RISCV_cpu{
     u32 x[REG_LEN];
     u32 mem_map_reg[MM_REG_LEN];
     u32 pc;
-    set_associative cache(2, 8, 4);
     struct MEM_BUS* __bus;
     struct pipeline* __pipe;
     ALU* __alu;
