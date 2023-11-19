@@ -90,6 +90,7 @@ struct pipeline{
     struct bypassreg* bypass; //bypass register 
     bool de_stall; //stall decode?
     bool ex_stall; //stall execute?
+    int data_stall_counter;
 };
 
 
