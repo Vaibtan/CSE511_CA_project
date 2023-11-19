@@ -95,6 +95,8 @@ SB = {"BEQ","BNE","BLT","BGE", "BLTU", "BGEU"}
 I =  {"JALR", "LB", "LH", "LW", "LBU", "LHU", "ADDI", "SLTI", "SLTIU", "XORI", "ORI", "ANDI", "SLLI", "SRLI", "SRAI"}
 R  = {"ADD", "SUB", "SLL", "SLT", "SLTU", "XOR", "SRL", "SRA", "OR", "AND"}
 Z =  {"LOADNOC","STORENOC"}   # add storenoc and loadnoc (any opcode value will work)
+Y =  {"SIMD_ADD", "SIMD_SUB"} # SIMD instructions added
+
 Registers = Create_Registers(5)
 
 Template = {                                  # This is the template we use for processing all 37 commands
@@ -146,6 +148,9 @@ Template = {                                  # This is the template we use for 
 
     "LOADNOC"   :   "0" * 17 + "000" + "0"*5 + "0000111",   # 2 EXTRA instructions implemented 
     "STORENOC"  :   "0" * 17 + "001" + "0"*5 + "0000111",  # note the opcode chosen (template similar to S-type)
+
+    "SIMD_ADD"    :   "0000000" + "0"*10 + "000" + "0"*5 + "1111111", # 7 bit opcode for SIMD-> 1111111
+    "SIMD_SUB"    :   "0100000" + "0"*10 + "000" + "0"*5 + "1111111",
 }
 
 for Inst in Template:
@@ -229,7 +234,18 @@ for Inst in Instructions:
         res = res[0:20] + Decimal_Binary_Register(rs2, 5) + res[25:32]
         res = res[0:7]  + imm[0:5] + res[12:32]
         res = res[0:25] + imm[5:12]
-        
+    
+    elif type in Y:
+
+            rd  = int(Inst[1][1:])      #Reads the integer in rs1, rs2, etc. to determine register number
+            rs1 = int(Inst[2][1:])
+            rs2 = int(Inst[3][1:])    
+
+            res = res[0:7]  + Decimal_Binary_Register(rd, 5) + res[12:32]
+            res = res[0:15] + Decimal_Binary_Register(rs1, 5) + res[20:32]
+            res = res[0:20] + Decimal_Binary_Register(rs2, 5) + res[25:32]
+
+
     res = res[::-1]
     Binary_Instructions.append(res)
        
