@@ -6,13 +6,14 @@
 
 #define RISCV_MEM_SIZE 1024 * 64     //MEMORY_SIZE OF 64kB
 // #define RISCV_MEM_BASE 0x10000 // 65536
-#define RISCV_MEM_BASE 0 // 65536
+#define RISCV_MEM_BASE_Data 0 
+#define RISCV_MEM_BASE_INSTR 0
 typedef struct RISC_DATA_mem{
-    u8 rv32i_data_mem[RISCV_MEM_SIZE];
+    u8 rv32i_data_mem[RISCV_MEM_SIZE/2];
 } DATA_mem;
 
 typedef struct RISC_INSTR_mem{
-    u32 rv32i_instr_mem[RISCV_MEM_SIZE];
+    u32 rv32i_instr_mem[RISCV_MEM_SIZE/2];
 } INSTR_mem;
 
 u32 d_mem_ld(DATA_mem* data_mem, u32 addr, u32 sz_);
