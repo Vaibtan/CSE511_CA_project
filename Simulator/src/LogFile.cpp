@@ -1,8 +1,8 @@
 #include "LogFile.hpp"
 
-void memstate(FILE* file, RISCV_cpu* cpu) {
+void memstate(FILE* file, RISCV_cpu* cpu, pipeline* pipe) {
     fprintf(file, "Memory location  :   Data\n");
-    mem_unit* mem_stage = &cpu->__pipe->memory;
+    mem_unit* mem_stage = pipe->memory;
 
     // Check if the program has completed (memory stage is done)
     if (mem_stage->done) {
@@ -52,7 +52,6 @@ void isStall(FILE* file, RISCV_cpu *cpu, pipeline* pipe){
 
     if (pipe->ex_stall) {
         fprintf(file, "Execute stage is stalled\n");
-        pipe->data_stall_counter++;
     }
     fprintf(file, "\n");
 }
