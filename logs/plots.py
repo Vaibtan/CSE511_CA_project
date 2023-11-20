@@ -1,42 +1,52 @@
 import matplotlib.pyplot as plt
-import time
 
-def plot_counters():
+# Read data from counters.txt
+with open('counters.txt', 'r') as file:
+    lines = file.readlines()
+
+# Extract register and memory instruction counts
+register_instructions = int(lines[0].split(":")[1].strip())
+memory_instructions = int(lines[1].split(":")[1].strip())
+
+# Create a pie chart
+labels = ['Register Instructions', 'Memory Instructions']
+sizes = [register_instructions, memory_instructions]
+colors = ['#ff9999', '#66b3ff']  # Red for register, Blue for memory
+explode = (0.1, 0)  # explode the 1st slice (i.e., Register Instructions)
+
+plt.pie(sizes, explode=explode, labels=labels, colors=colors, autopct='%1.1f%%', startangle=90)
+plt.axis('equal')  # Equal aspect ratio ensures that the pie chart is circular.
+
+# Show the pie chart
+plt.title('RISC-V Instruction Distribution')
+plt.show()
+
+
+def read_log_file(file_path):
     cycles = []
-    data_stalls = []
-    while True:
-        try:
-            # Read counters from the file
-            with open("counters.txt", "r") as counter_file:
-                lines = counter_file.readlines()
-                for line in lines:
-                    parts = line.split()
-                    if len(parts) >= 2:
-                        counter_value = int(parts[-1])
-                        if "Register" in line:
-                            register_counter = counter_value
-                        elif "Memory" in line:
-                            memory_counter = counter_value
+    stalls = []
 
-            with open("logfile.txt", "r") as log_file:
-                lines = log_file.readlines()
-                for line in lines:
-                    if "Data Stalls:" in line:
-                        data_stalls.append(int(line.split()[-1]))
-                        cycles.append(int(lines[1].split()[-1]))
+    with open(file_path, 'r') as file:
+        lines = file.readlines()
 
-            # Plot the counters
-            plt.plot(register_counter, label="Register Instructions")
-            plt.plot(memory_counter, label="Memory Instructions")
-            plt.plot(cycles, data_stalls, label="Data Stalls", linestyle="--")
-            plt.xlabel("Cycle")
-            plt.ylabel("Instruction Count")
-            plt.legend()
-            plt.title("Instruction Counters Plot")
-            plt.show()
-            time.sleep(1)  # Adjust the sleep duration as needed
-        except FileNotFoundError:
-            pass  # Ignore if the file is not found
+    for line in lines:
+        if line.startswith("Cycle"):
+            cycle_number = int(line.split()[1].strip(':'))
+            cycles.append(cycle_number)
+        elif line.startswith("Total number of stalls:"):
+            stall_count = int(line.split(":")[1].strip())
+            stalls.append(stall_count)
 
-if __name__ == "__main__":
-    plot_counters()
+    return cycles, stalls
+
+def plot_graph(cycles, stalls):
+    plt.plot(cycles, stalls, 'o')
+    plt.title('Stalls vs Cycles')
+    plt.xlabel('Cycles')
+    plt.ylabel('Stalls')
+    plt.grid(True)
+    plt.show()
+
+log_file_path = "LogFile.log"
+cycles, stalls = read_log_file(log_file_path)
+plot_graph(cycles, stalls)
