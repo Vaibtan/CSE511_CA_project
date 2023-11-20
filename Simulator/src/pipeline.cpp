@@ -31,6 +31,7 @@ pipeline* pipe_init(){
     pipe->memory = (mem_unit *)malloc(sizeof(mem_unit));
     pipe->writeback = (wb_unit *)malloc(sizeof(wb_unit));
     pipe->bypass = (bypassreg *)malloc(sizeof(bypassreg));
+    pipe->data_stall_counter = 0;
     pipeline_reset(pipe);
     return pipe;
 }
