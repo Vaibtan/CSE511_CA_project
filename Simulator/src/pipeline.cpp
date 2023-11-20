@@ -247,7 +247,7 @@ void jump_withoutBYPASSING(pipeline*pipe){
     reset_branchflags(pipe);
 }
 
-u32 jump(pipeline*pipe,u32* pc){
+void jump(pipeline*pipe,u32* pc){
     // std::cout<<pipe->cycle<<'\n';
     if(pipe->isbranch){
         if(pipe->bypass->new_pc!=pipe->decode->pcd){
