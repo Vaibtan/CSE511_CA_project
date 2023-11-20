@@ -1,5 +1,6 @@
 #ifndef MEMBUS_H
 #define MEMBUS_H
+#include "utils.hpp"
 #include "memory.hpp"
 
 struct DATA_MEM_BUS {
@@ -17,11 +18,10 @@ struct MEM_BUS {
 
 INSTR_MEM_BUS* instr_bus_init(INSTR_mem* mem);
 DATA_MEM_BUS* data_bus_init(DATA_mem* mem);
-MEM_BUS* mem_bus_init(DATA_MEM_BUS* d_bus,INSTR_MEM_BUS* i_bus);
+MEM_BUS* mem_bus_init();
 
 u32 data_bus_ld(DATA_MEM_BUS* _bus, u32 addr, u32 size);
 void data_bus_st(DATA_MEM_BUS* _bus, u32 addr, u32 size, u32 value);
-
 
 u32 instr_bus_ld(INSTR_MEM_BUS* _bus, u32 addr, u32 size);
 void instr_bus_st(INSTR_MEM_BUS* _bus, u32 addr, u32 size, u32 value);
