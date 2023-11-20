@@ -131,6 +131,7 @@ void pipeline_reset(pipeline *pipe){
     pipe->newpc_offset2=4;
     pipe->de_stall=false;
     pipe->ex_stall=false;
+    pipe->data_stall_counter = 0;
 }
 
 void changef_to_d(pipeline *pipe){
@@ -279,14 +280,17 @@ void jump(pipeline*pipe,u32* pc){
 void stall_withoutBYPASSING(pipeline*pipe){
     if(pipe->execute->isstore && pipe->execute->rs!=34 && pipe->memory->rd!=34  && pipe->memory->rd==pipe->execute->rs){
         pipe->ex_stall=true;
+        pipe->data_stall_counter++;
     }
     else{
         pipe->ex_stall=false;
         if(!pipe->memory->isstype && pipe->memory->rd!=34 && ((pipe->decode->rs1!=34 && pipe->memory->rd==pipe->decode->rs1)||(pipe->decode->rs2!=34 && pipe->memory->rd==pipe->decode->rs2))){
             pipe->de_stall=true;
+            pipe->data_stall_counter++;
         }
         else if( !pipe->decode->isstore && !pipe->execute->isstype && pipe->execute->rd!=34 && ((pipe->decode->rs1!=34 && pipe->execute->rd==pipe->decode->rs1)||(pipe->decode->rs2!=34 && pipe->execute->rd==pipe->decode->rs2))){
             pipe->de_stall=true;
+            pipe->data_stall_counter++;
         }
         else
         pipe->de_stall=false;
@@ -296,6 +300,7 @@ void stall_withoutBYPASSING(pipeline*pipe){
 void stall(pipeline*pipe){
     if(pipe->execute->isload && pipe->execute->rd!=34 && ((pipe->decode->rs1 !=34 && pipe->execute->rd==pipe->decode->rs1)||( pipe->decode->rs2 && pipe->execute->rd==pipe->decode->rs2)))
         pipe->de_stall=true;
+        pipe->data_stall_counter++;
     else
     pipe->de_stall=false;
     pipe->ex_stall=false;
