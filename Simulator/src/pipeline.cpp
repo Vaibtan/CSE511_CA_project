@@ -301,12 +301,13 @@ void stall_withoutBYPASSING(pipeline*pipe){
 }
 
 void stall(pipeline*pipe){
-    if(pipe->execute->isload && pipe->execute->rd!=34 && ((pipe->decode->rs1 !=34 && pipe->execute->rd==pipe->decode->rs1)||( pipe->decode->rs2 && pipe->execute->rd==pipe->decode->rs2)))
+    if(pipe->execute->isload && pipe->execute->rd!=34 && ((pipe->decode->rs1 !=34 && pipe->execute->rd==pipe->decode->rs1)||( pipe->decode->rs2 && pipe->execute->rd==pipe->decode->rs2))){
         pipe->de_stall=true;
-        pipe->data_stall_counter++;
+        pipe->data_stall_counter++; }
     else
-    pipe->de_stall=false;
+{    pipe->de_stall=false;
     pipe->ex_stall=false;
+}
 }
 
 // state change functions
