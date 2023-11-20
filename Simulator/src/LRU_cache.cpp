@@ -39,8 +39,9 @@ string make_sz(string __s, u32 __SZ) {
     return __res;
 }
 
-set_associative::set_associative(int __asc, int c_l, int blk_SZ)
-{
+set_associative::set_associative(MEM_BUS* bus_memory,int __asc, int c_l, int blk_SZ)
+{	
+	this->_bus = bus_memory;
     this->assoc = __asc;
     this->cache_line = c_l;
     this->blk_SZ = blk_SZ;
@@ -59,7 +60,7 @@ void set_associative::__incre__(){
 	}
 }  
 
-optional<u32> set_associative::cache_read(u32 byte_ADDR, u32 set_ADDR, u32 off) {
+u32 set_associative::cache_read(u32 byte_ADDR, u32 set_ADDR, u32 off) {
 	__incre__();
 	REP(_z, 0, assoc) {
 	    if (!empty[set_ADDR * assoc + _z] && tag[set_ADDR * assoc + _z] == byte_ADDR) {
@@ -116,7 +117,6 @@ void set_associative::__print__() {
 	
 	    if (_z % assoc == 0) { cout << endl; }
 		// differentiate between sets
-	    
 	    cout << "##BLOCK## " << val_to_bin(tag[_z], 32 - __lg(blk_SZ) - __lg(cache_line / assoc)) << " ##DATA## : ";
 	    
 	    REP(_j, 0, blk_SZ) { cout << data[_z / assoc][_z % assoc][_j] << " "; }

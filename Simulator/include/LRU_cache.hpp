@@ -1,7 +1,6 @@
 #ifndef CACHE_RISCV_H
 #define CACHE_RISCV_H
-
-#include "utils.hpp"
+#include "membus.hpp"
 
 #define MA 0xffffffff
 
@@ -14,6 +13,11 @@ SET_ADDR_WIDTH :: lg(SET_NUM) = lg(4) = 2
 TAG_WIDTH :: ADDR_WIDTH - SET_WIDTH - OFFSET_WIDTH :: 32-3-5 :: 24 Bits
 */
 
+u32 bin_pow(u32 __bs, u32 __exp);
+u32 bin_to_val(std::string __s);
+std::string val_to_bin(u32 __v, u32 __SZ);
+std::string make_sz(std::string __s, u32 __SZ);
+
 
 //UNIFIED_CLASS
 class set_associative{
@@ -25,15 +29,15 @@ private:
     std::vector<std::vector<std::vector<u32>>> data;
     std::vector<int> count;
     std::vector<bool> empty;
-
+    
 public:
-    set_associative(int assoc, int cache_line, int blk_SZ);
+    MEM_BUS* _bus;
+    set_associative(MEM_BUS* bus_memory,int assoc, int cache_line, int blk_SZ);
     void __incre__();
-    std::optional<u32> cache_read(u32 byte_ADDR, u32 set_ADDR, u32 off);
+    u32 cache_read(u32 byte_ADDR, u32 set_ADDR, u32 off);
     //off = bin_to_val(ADDR_STR.substr(32 - __lg(blk_SZ), __lg(blk_SZ)));
     //set_addr = bin_to_val(ADDR_STR.substr(32 - __lg(blk_SZ) - __lg(c_l / assoc), __lg(c_l / assoc)));
     //byte_addr = bin_to_val(ADDR_STR.substr(0, 32 - __lg(blk_SZ) - __lg(c_l / assoc)));
-    
     void cache_write(u32 byte_ADDR, u32 set_ADDR, u32 off, u32 _val);
     void __print__();
 };
