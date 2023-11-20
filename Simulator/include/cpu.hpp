@@ -1,12 +1,10 @@
 #ifndef CPU_H
 #define CPU_H
 
-#include "utils.hpp"
 #include "instruction.hpp"
 #include "pipeline.hpp"
 #include "membus.hpp"
 #include "ALU.hpp"
-#include "LRU_cache.hpp"
 
 #define REG_LEN 32
 #define MM_REG_LEN 5
@@ -16,7 +14,6 @@ struct RISCV_cpu{
     u32 x[REG_LEN];
     u32 mem_map_reg[MM_REG_LEN];
     u32 pc;
-    set_associative cache(2, 8, 4);
     struct MEM_BUS* __bus;
     struct pipeline* __pipe;
     ALU* __alu;
