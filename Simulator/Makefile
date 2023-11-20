@@ -35,4 +35,4 @@ clean:
 
 # Target to run plots.py after logfile.log has been updated
 plots: ../logs/logfile.log
-	python plots.py
+	python src/plots.py
