@@ -55,7 +55,7 @@ void cpu_fetch(RISCV_cpu *cpu,u32 new_pc,bool early_exit) {
     }
     if(cpu->__pipe->fetch->done)return;
     fetch_pc_update(cpu,new_pc);
-    cpu ->__pipe->fetch->inst = instr_bus_ld(cpu->__bus->instr_bus, cpu->pc,32);
+    cpu ->__pipe->fetch->inst = i_cache_ld(cpu->__bus->i_cache_bus, cpu->pc,32);
     cpu->__pipe->fetch->pcf=cpu->pc;
     cpu->__pipe->fetch->done=true;
 }
@@ -758,10 +758,10 @@ void cpu_execute(RISCV_cpu *cpu){
 
 //Helper Function for load and store
 u32 cpu_ld(RISCV_cpu* cpu, u32 addr, u32 size) {
-    return data_bus_ld((cpu->__bus->data_bus), addr, size);
+    return d_cache_ld(cpu->__bus->d_cache_bus,addr,size);
 }
 void cpu_st(RISCV_cpu* cpu, u32 addr, u32 size, u32 value) {
-    data_bus_st((cpu->__bus->data_bus), addr, size, value);
+    d_cache_st(cpu->__bus->d_cache_bus, addr,size, value);
 }
 
 //Memory_stage
