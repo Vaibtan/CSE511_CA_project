@@ -204,6 +204,7 @@ void changeex_to_m(pipeline *pipe){
         pipe->memory->value = pipe->execute->result;
     }
     pipe->memory->done = false;
+    pipe->memory->inst = pipe->execute->inst;
 }
 
 void changem_to_wb(pipeline *pipe){
@@ -211,6 +212,7 @@ void changem_to_wb(pipeline *pipe){
     pipe->writeback->imm = pipe->memory->value;
     pipe->writeback->iswrite = pipe->memory->iswrite;
     pipe->writeback->done = false;
+    pipe->writeback->inst = pipe->memory->inst;
 }
 
 // reset the branch flags
