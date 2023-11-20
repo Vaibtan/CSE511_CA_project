@@ -817,7 +817,13 @@ void cpu_writeback(RISCV_cpu*cpu){
         }
     }
 }
+
 FILE *counter_file = fopen("counters.txt", "w");
-fprintf(counter_file, "%u %u", cpu->register_instr_counter, cpu->memory_instr_counter);
-fclose(counter_file);
+    
+    if (counter_file != nullptr) {
+        fprintf(counter_file, "%u %u", cpu->register_instr_counter, cpu->memory_instr_counter);
+        fclose(counter_file);
+    } else {
+        perror("Error opening counters.txt");
+    }
 
