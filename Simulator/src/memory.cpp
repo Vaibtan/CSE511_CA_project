@@ -68,25 +68,16 @@ INSTR_mem *instr_init(){
     return mem;
 }
 
-u32 i_mem_ld(INSTR_mem* mem, u32 addr){
+u32 i_mem_ld(INSTR_mem* mem, u32 addr, u32 sz_){
     return (u32) mem->rv32i_instr_mem[addr - RISCV_MEM_BASE_INSTR]
         |  (u32) mem->rv32i_instr_mem[addr - RISCV_MEM_BASE_INSTR + 1] << 8
         |  (u32) mem->rv32i_instr_mem[addr - RISCV_MEM_BASE_INSTR + 2] << 16 
         |  (u32) mem->rv32i_instr_mem[addr - RISCV_MEM_BASE_INSTR + 3] << 24;
 }
 
-void i_mem_st(INSTR_mem* mem, u32 addr, u32 value){
+void i_mem_st(INSTR_mem* mem, u32 addr,u32 sz_, u32 value){
     mem->rv32i_instr_mem[addr - RISCV_MEM_BASE_INSTR] = (u8) (value & 0xff);
     mem->rv32i_instr_mem[addr - RISCV_MEM_BASE_INSTR + 1] = (u8) ((value >> 8) & 0xff);
     mem->rv32i_instr_mem[addr - RISCV_MEM_BASE_INSTR + 2] = (u8) ((value >> 16) & 0xff);
     mem->rv32i_instr_mem[addr - RISCV_MEM_BASE_INSTR + 3] = (u8) ((value >> 24) & 0xff);
 }
-
-/**
-RV32i_mem::RV32i_mem(size_t _sz){
-    dat_x = new char[_sz];
-}
-RV32i_mem::~RV32i_mem(){
-    delete[] dat_x;
-}
-*/
