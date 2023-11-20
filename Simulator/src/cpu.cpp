@@ -22,9 +22,9 @@ RISCV_cpu* CPU_init() {
         exit(1);
     }
 
-    cpu->__bus = mem_bus_init(data_bus_init(data_init()),instr_bus_init(instr_init()));
+    cpu->__bus = cache_bus_init();
     if (cpu->__bus==NULL) {
-        fprintf(stderr, "[-] ERROR-> mem_bus_init: malloc failed\n");
+        fprintf(stderr, "[-] ERROR-> cache_bus_init: malloc failed\n");
         exit(1);
     }
     cpu->__pipe = pipe_init();
