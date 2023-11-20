@@ -36,6 +36,8 @@ RISCV_cpu* CPU_init() {
         fprintf(stderr, "[-] ERROR-> alu_init : malloc failed\n");
         exit(1);
     }
+    cpu->register_instr_counter = 0;
+    cpu->memory_instr_counter = 0;
     CPU_reset(cpu);
     return cpu;
 }
