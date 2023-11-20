@@ -12,7 +12,7 @@ void memstate(FILE* file, RISCV_cpu* cpu, pipeline* pipe) {
 
             // Print memory information for the entire memory range
             for (int i = 0; i < RISCV_MEM_SIZE; i++) {
-                fprintf(memory_access_file, "0x%x,%u\n", i, cpu->__bus->riscv_mem->rv32i_mem[i]);
+                fprintf(memory_access_file, "0x%x,%u\n", i, cpu->__bus->data_bus->data_mem->rv32i_data_mem[i]);
             }
 
             // Print memory information for the specific address and data in the memory stage
