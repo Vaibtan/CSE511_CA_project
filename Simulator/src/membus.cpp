@@ -1,6 +1,6 @@
 #include "membus.hpp"
 
-u32 data_bus_ld(DATA_MEM_BUS* _bus, u32 addr, u32 size){
+u32 data_bus_ld(DATA_MEM_BUS* _bus, u32 addr, u32 size) {
     return d_mem_ld((_bus->data_mem), addr,size);
 }
 
@@ -26,9 +26,32 @@ INSTR_MEM_BUS* instr_bus_init(INSTR_mem* mem){
     return _bus;
 }
 
-MEM_BUS* mem_bus_init(DATA_MEM_BUS* d_bus,INSTR_MEM_BUS* i_bus){
+MEM_BUS* mem_bus_init(){
     MEM_BUS* __bus = (MEM_BUS*)malloc(sizeof(MEM_BUS));
-    __bus->data_bus = d_bus;
-    __bus->instr_bus = i_bus;
+    if (__bus == NULL) {
+        fprintf(stderr, "[-] ERROR-> mem_bus_init: malloc failed\n");
+        exit(1);
+    }
+    DATA_mem* mem_d = data_init();
+    if (mem_d == NULL) {
+        fprintf(stderr, "[-] ERROR-> data_mem_init: malloc failed\n");
+        exit(1);
+    }
+    __bus->data_bus = data_bus_init(mem_d);
+    if (__bus->data_bus == NULL) {
+        fprintf(stderr, "[-] ERROR-> data_mem_bus_init: malloc failed\n");
+        exit(1);
+    }
+    INSTR_mem* mem_i = instr_init();
+    if (mem_i == NULL) {
+        fprintf(stderr, "[-] ERROR-> instr_mem_init: malloc failed\n");
+        exit(1);
+    }
+    __bus->instr_bus = instr_bus_init(mem_i);
+    if (__bus->instr_bus == NULL) {
+        fprintf(stderr, "[-] ERROR-> instr_mem_bus_init: malloc failed\n");
+        exit(1);
+    }
     return __bus;
 }
+
