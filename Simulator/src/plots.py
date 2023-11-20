@@ -8,9 +8,15 @@ def plot_counters():
         try:
             # Read counters from the file
             with open("counters.txt", "r") as counter_file:
-                counters = counter_file.read().split()
-                register_counter = int(counters[0])
-                memory_counter = int(counters[1])
+                lines = counter_file.readlines()
+                for line in lines:
+                    parts = line.split()
+                    if len(parts) >= 2:
+                        counter_value = int(parts[-1])
+                        if "Register" in line:
+                            register_counter = counter_value
+                        elif "Memory" in line:
+                            memory_counter = counter_value
 
             with open("logfile.txt", "r") as log_file:
                 lines = log_file.readlines()
