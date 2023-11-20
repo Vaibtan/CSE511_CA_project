@@ -18,7 +18,6 @@ typedef struct RISC_INSTR_mem{
 
 u32 d_mem_ld(DATA_mem* data_mem, u32 addr, u32 sz_);
 void d_mem_st(DATA_mem* data_mem, u32 addr, u32 sz_, u32 value);
-
 u32 i_mem_ld(INSTR_mem* instr_mem, u32 addr, u32 sz_);
 void i_mem_st(INSTR_mem* instr_mem, u32 addr, u32 sz_, u32 value);
 
