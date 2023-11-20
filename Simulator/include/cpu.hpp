@@ -3,9 +3,8 @@
 
 #include "instruction.hpp"
 #include "pipeline.hpp"
-#include "membus.hpp"
 #include "ALU.hpp"
-
+#include "cache_bus.hpp"
 #define REG_LEN 32
 #define MM_REG_LEN 5
 #define MM_BASE_ADDR 0x10000 // 65536 (since mem is 64kb)
@@ -14,7 +13,7 @@ struct RISCV_cpu{
     u32 x[REG_LEN];
     u32 mem_map_reg[MM_REG_LEN];
     u32 pc;
-    struct MEM_BUS* __bus;
+    struct cache_bus* __bus;
     struct pipeline* __pipe;
     ALU* __alu;
     int memory_instr_counter;
