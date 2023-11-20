@@ -2,7 +2,8 @@ all:
 	python3 Assembler/Assembler.py
 	python3 Assembler/Assembler_Evaluator.py
 	cd Simulator && $(MAKE) clean
-	cd Simulator && $(MAKE) all 
+	cd Simulator && $(MAKE) all
+	python3 logs/plots.py
 clean:
 	cd Simulator && $(MAKE) clean
 	rm -f Output/Output.bin
