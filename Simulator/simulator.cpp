@@ -49,7 +49,7 @@ u32 load_Instrucctions_in_memory(RISCV_cpu* cpu,char* path){
     u32  INST_END= RISCV_MEM_BASE_INSTR;
     u32 INST = 0;
     while(fread(&INST,sizeof(u32),1,fp)){
-        instr_bus_st(cpu->__bus->instr_bus, INST_END ,32,INST);
+        i_cache_st(cpu->__bus->i_cache_bus,INST_END, 32, INST);
         INST_END+=4;
     }
     fclose(fp);
