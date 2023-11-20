@@ -1,29 +1,25 @@
 #include "LogFile.hpp"
+#include <stdio.h>
+#include <iostream>
 
-void memstate(FILE* file, RISCV_cpu* cpu, pipeline* pipe) {
-    mem_unit* mem_stage = pipe->memory;
-
-    // memory stage is done
-    if (mem_stage->done) {
-        // Open a file to store memory access pattern
-        FILE* memory_access_file = fopen("memory_access_pattern.txt", "w");
-        if (memory_access_file != NULL) {
-            fprintf(memory_access_file, "Memory Location,Data\n");
-
-            // Print memory information for the entire memory range
-            for (int i = 0; i < RISCV_MEM_SIZE; i++) {
-                fprintf(file, "0x%x     :   0x%x\n", i, cpu->__bus->d_cache_bus->data_cache->_bus->data_bus->data_mem->rv32i_data_mem[i]);
-            }
-
-            // Print memory information for the specific address and data in the memory stage
-            fprintf(memory_access_file, "\nMemory Stage Information:\n");
-            fprintf(memory_access_file, "Address: 0x%x\n", mem_stage->addr);
-            fprintf(memory_access_file, "Data   : 0x%x\n", mem_stage->value);
-
-            fclose(memory_access_file);
-        }
+void printMemory(RISCV_cpu* cpu) {
+    // detect 
+    if (cpu->__pipe->memory->isload == true || cpu->__pipe->memory->isstore == true){
+        //std::cout<< "printing1";
+        std::cout << "Addr" << cpu->__pipe->memory->addr << std::endl;
+        //std::cout<< "printing2";
+        std::cout << "Value" << (int)cpu->__bus->data_bus->data_mem->rv32i_data_mem[cpu->__pipe->memory->addr] << std::endl;
+        //std::cout<< "printing3";
     }
+
+    // for (const auto& entry : cpu->memory_map) {
+    //     u32 address = entry.first;
+    //     u32 data = entry.second;
+
+    //     printf("Address: 0x%x, Data: 0x%x\n", address, data);
+    // }
 }
+
 
 void save_counters_to_file(FILE* file, RISCV_cpu* cpu) {
     fprintf(file, "Register Instructions: %u\n", cpu->register_instr_counter);
@@ -31,7 +27,7 @@ void save_counters_to_file(FILE* file, RISCV_cpu* cpu) {
 }
 
 void save_counters(RISCV_cpu* cpu) {
-    FILE *counter_file = fopen("counters.txt", "w");
+    FILE *counter_file = fopen("../logs/counters.txt", "w");
     save_counters_to_file(counter_file, cpu);
     fclose(counter_file);
 }
@@ -60,33 +56,42 @@ void pipelineValues(FILE* file, RISCV_cpu *cpu, pipeline* pipe) {
     fprintf(file, "****************************************************************************\n");
 }
 
-void isStall(FILE* file, RISCV_cpu *cpu, pipeline* pipe){
+int isStall(FILE* file, RISCV_cpu *cpu, pipeline* pipe) {
+    int stallCounter = 0;
 
-    fprintf(file, "\nStall Status:\n");
+    fprintf(file, "\nStall Status:");
 
     if (pipe->de_stall) {
         fprintf(file, "Decode stage is stalled\n");
+        stallCounter++;
     }
 
     if (pipe->ex_stall) {
         fprintf(file, "Execute stage is stalled\n");
+        stallCounter++;
+    } else if (!(pipe->de_stall || pipe->ex_stall)) {
+        fprintf(file, "0");
     }
     fprintf(file, "\n");
+    return stallCounter;
 }
 
+void save_total_stalls_to_file(FILE* file, int totalStalls) {
+    fprintf(file, "Total number of stalls: %d\n", totalStalls);
+}
 
 void logValues(FILE* file, RISCV_cpu *cpu, pipeline* pipe) {
-
     fprintf(file, "Cycle %d:\n", pipe->cycle);
     fprintf(file, "\n");
 
     fprintf(file, "CPU Context:\n");
-
     RegValues(file, cpu);
 
     pipelineValues(file, cpu, pipe);
 
-    isStall(file, cpu, pipe);
+    int totalStalls = isStall(file, cpu, pipe);
 
     save_counters(cpu);
+    save_total_stalls_to_file(file, totalStalls);
+    printMemory(cpu);
 }
