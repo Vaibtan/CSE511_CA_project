@@ -20,9 +20,9 @@ DATA_CACHE_BUS* d_cache_bus_init();
 INSTR_CACHE_BUS* i_cache_bus_init();
 cache_bus* cache_bus_init();
 
-u32 d_cache_ld(DATA_MEM_BUS* _bus, u32 addr, u32 size);
-void d_cache_st(DATA_MEM_BUS* _bus, u32 addr, u32 size, u32 value);
-u32 i_cache_ld(INSTR_MEM_BUS* _bus, u32 addr, u32 size);
-void i_cache_st(INSTR_MEM_BUS* _bus, u32 addr, u32 size, u32 value);
+u32 d_cache_ld(DATA_CACHE_BUS* d_cache_bus, u32 addr, u32 size);
+void d_cache_st(DATA_CACHE_BUS* d_cache_bus, u32 addr, u32 size, u32 _val);
+u32 i_cache_ld(INSTR_CACHE_BUS* i_cache_bus, u32 addr, u32 size);
+void i_cache_st(INSTR_CACHE_BUS* i_cache_bus, u32 addr, u32 size, u32 _val);
 
 #endif
