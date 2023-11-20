@@ -5,7 +5,7 @@
 
 CXX = g++
 
-#remove @ for no make command prints
+# Remove @ for no make command prints
 DEBUG = @
 
 APP_NAME = simulator
@@ -26,8 +26,13 @@ MAKE_CMD = $(CXX) $(SRC_FILES) -o $(APP_NAME) $(INCLUDE_DIRS)
 all:
 	$(DEBUG)$(MAKE_CMD)
 	./$(APP_NAME) ../Assembler/Output/Output.bin
+	@make plots  # Run the 'plots' target after the main target
 
 # This command is issued before you recompile the project after making changes
 clean:
 	rm -f $(MAIN_DIR)/$(APP_NAME)
 	rm -f ../logs/logfile.log
+
+# Target to run plots.py after logfile.log has been updated
+plots: ../logs/logfile.log
+	python plots.py
