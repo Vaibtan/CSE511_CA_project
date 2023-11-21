@@ -1,6 +1,9 @@
 #ifndef INSTRUCTION_H
 #define INSTRUCTION_H
 
+#define ADDSIMD 0b1010101
+#define SUBSIMD 0b1111111 
+
 #define LD_ST_NOC 0b0000111
     #define LOADNOC 0X0
     #define STORENOC 0X1
@@ -58,72 +61,6 @@
 
 
 #endif
-
-// typedef struct {
-//     u32 opcode : 7;
-//     u32 rd : 5;
-//     u32 imm : 20;
-// } U_type;
-
-// typedef struct {
-//     u32 opcode : 7;
-//     u32 rd : 5;
-//     u32 imm : 20;
-// } UJ_type;
-
-// typedef struct {
-//     u32 opcode : 7;
-//     u32 rd : 5;
-//     u32 func3 : 3;
-//     u32 rs1 : 5;
-//     u32 rs2 : 5;
-//     u32 func7 : 7;
-// } R_type;
-
-// typedef struct {
-//     u32 opcode : 7;
-//     u32 rd : 5;
-//     u32 func3 : 3;
-//     u32 rs1 : 5;
-//     u32 imm : 12;
-// } I_type;
-
-// typedef struct {
-//     u32 opcode : 7;
-//     u32 imm_0_4 : 5;
-//     u32 func3 : 3;
-//     u32 rs1 : 5;
-//     u32 rs2 : 5;
-//     u32 imm_5_11 : 7;
-// } S_type;
-
-// typedef struct {
-//     u32 opcode : 7;
-//     u32 imm_4_1_11 : 5;
-//     u32 func3 : 3;
-//     u32 rs1 : 5;
-//     u32 rs2 : 5;
-//     u32 imm_12_5_10 : 7;
-// } SB_type;
-
-
-// typedef union {
-//     U_type __u;
-//     UJ_type __uj;
-//     R_type __r;
-//     I_type __i;
-//     S_type __s;
-//     SB_type __sb;
-//     u32;
-//     i32;
-// } instr__;
-
-/**
-typedef enum {LOAD = 0x03, ALU_IMM = 0x13, STORE=0x23, ALU=0x33, BRANCH=0x63,
-              LUI = 0x37, AUIPC = 0x17, JAL = 0x6F, JALR = 0x67} __opcode;
-
-
-*/
 
 
 
