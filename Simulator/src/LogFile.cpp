@@ -18,6 +18,8 @@ void printMemory(RISCV_cpu* cpu, FILE* file) {
 void save_counters_to_file(FILE* file, RISCV_cpu* cpu) {
     fprintf(file, "Register Instructions: %u\n", cpu->register_instr_counter);
     fprintf(file, "Memory Instructions: %u\n", cpu->memory_instr_counter);
+    fprintf(file, "NOC Instructions: %u\n", cpu->noc_type_instr);
+    fprintf(file, "simd Instructions: %u\n", cpu->simd_type_instr);
 }
 
 void save_counters(RISCV_cpu* cpu) {
