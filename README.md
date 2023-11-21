@@ -1,7 +1,9 @@
-   
-============
-RISC V-CPU
-============
+# CA-Project 
+Cycle Accurate Simulator (with simd and cache)
+
+	============
+	RISC V-CPU
+	============
 
 This is a cycle accurate simlator for a 5 staged pipelined RISC-V CPU.
 
