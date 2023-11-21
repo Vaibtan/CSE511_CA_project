@@ -149,7 +149,7 @@ Template = {                                  # This is the template we use for 
     "LOADNOC"   :   "0" * 17 + "000" + "0"*5 + "0000111",   # 2 EXTRA instructions implemented 
     "STORENOC"  :   "0" * 17 + "001" + "0"*5 + "0000111",  # note the opcode chosen (template similar to S-type)
 
-    "SIMD_ADD"    :   "0000000" + "0"*10 + "000" + "0"*5 + "1010101", # 7 bit opcode for SIMD-> 1111111
+    "SIMD_ADD"    :   "0000000" + "0"*10 + "000" + "0"*5 + "1010101", # 7 bit opcode for SIMD
     "SIMD_SUB"    :   "0100000" + "0"*10 + "000" + "0"*5 + "1111111",
 }
 
