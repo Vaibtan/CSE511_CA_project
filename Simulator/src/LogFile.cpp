@@ -5,19 +5,9 @@
 void printMemory(RISCV_cpu* cpu) {
     // detect 
     if (cpu->__pipe->memory->isload == true || cpu->__pipe->memory->isstore == true){
-        //std::cout<< "printing1";
         std::cout << "Addr" << cpu->__pipe->memory->addr << std::endl;
-        //std::cout<< "printing2";
-        std::cout << "Value" << (int)cpu->__bus->data_bus->data_mem->rv32i_data_mem[cpu->__pipe->memory->addr] << std::endl;
-        //std::cout<< "printing3";
+        std::cout << "Value" << (int)cpu->__bus->d_cache_bus->data_cache->_bus->data_bus->data_mem->rv32i_data_mem[cpu->__pipe->memory->addr] << std::endl;
     }
-
-    // for (const auto& entry : cpu->memory_map) {
-    //     u32 address = entry.first;
-    //     u32 data = entry.second;
-
-    //     printf("Address: 0x%x, Data: 0x%x\n", address, data);
-    // }
 }
 
 
