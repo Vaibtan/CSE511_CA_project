@@ -45,12 +45,12 @@ set_associative::set_associative(MEM_BUS* bus_memory,int __asc, int c_l, int blk
     this->assoc = __asc;
     this->cache_line = c_l;
     this->blk_SZ = blk_SZ;
-    data.resize(c_l / __asc, vector<vector<u32>> (__asc, vector<u32> (blk_SZ)));
-	count.resize(c_l, 0);
-	empty.resize(c_l, true);
-	tag.resize(c_l);
+    data.resize(c_l / __asc, vector<vector<u32>> (__asc, vector<u32> (blk_SZ)));  //VECTOR OF SETS, EACH SET HAS DATA_ENTRIES(EACH W/ SIZE blk_SZ)
+	count.resize(c_l, 0);	//NO. OF USES OF CACHE WHERE iTH INDEX IN tag IS NOT TOUCHED;
+	empty.resize(c_l, true);	//iTH ENTRY OF tag STORED IF EMPTY;
+	tag.resize(c_l);		//tag CONTAINS THE TAG OF ALL THE DATA ENTRIES;
 }
-
+// EVERY ELEMENT IN count IS INCREMENTED DURING READ AND WRITE OPS;
 void set_associative::__incre__(){
     REP(_z, 0, cache_line){
 	    if (!empty[_z]) {
@@ -61,6 +61,7 @@ void set_associative::__incre__(){
 }  
 
 u32 set_associative::cache_read(u32 byte_ADDR, u32 set_ADDR, u32 off) {
+	//CHECKS ALL ENTRIES IN THE set_ADDR'TH SET AND MATCHES THEM WITH THE TAG_ADDR(byte_ADDR)
 	__incre__();
 	REP(_z, 0, assoc) {
 	    if (!empty[set_ADDR * assoc + _z] && tag[set_ADDR * assoc + _z] == byte_ADDR) {
@@ -72,6 +73,11 @@ u32 set_associative::cache_read(u32 byte_ADDR, u32 set_ADDR, u32 off) {
 }
 
 void set_associative::cache_write(u32 byte_ADDR, u32 set_ADDR, u32 off, u32 _val) {
+	//CHECKS ALL ENTRIES IN THE set_ADDR'TH SET AND MATCHES THEM WITH THE TAG_ADDR(byte_ADDR);
+	//PERFORMS WRITE_OP ON THAT ENTRY W/ OFFSET(off);
+	//IF NO MATCH, CHECK IF BLOCK EMPTY:
+	//	INSERT BLOCK AND WRITE DATA W/ OFFSET
+	//  IF NO, EVICT THE BLOCK W/ MOST COUNT AND INSERT NEW BLOCK AND WRITE THERE;
 	__incre__();
 	REP(_z, 0, assoc){
 	    if (!empty[set_ADDR * assoc + _z] && tag[set_ADDR * assoc + _z] == byte_ADDR) {
