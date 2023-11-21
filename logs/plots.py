@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 
 # Read data from counters.txt
-with open('counters.txt', 'r') as file:
+with open('logs/counters.txt', 'r') as file:
     lines = file.readlines()
 
 # Extract register and memory instruction counts
@@ -19,12 +19,12 @@ plt.axis('equal')  # Equal aspect ratio ensures that the pie chart is circular.
 
 # Show the pie chart
 plt.title('RISC-V Instruction Distribution')
-plt.savefig("../Figure/r_m.pdf",format="pdf")
+plt.savefig("Figure/r_m.pdf",format="pdf")
+#plt.savefig("Figure/r_m.png",format="png")
 plt.show()
 
-
-def read_log_file(file_path):
-    cycles = []
+cycles = []
+def stalling(file_path):
     stalls = []
 
     with open(file_path, 'r') as file:
@@ -38,21 +38,15 @@ def read_log_file(file_path):
             stall_count = int(line.split(":")[1].strip())
             stalls.append(stall_count)
 
-    return cycles, stalls
-
-def plot_graph(cycles, stalls):
     plt.plot(cycles, stalls, 'o')
     plt.title('Stalls vs Cycles')
     plt.xlabel('Cycles')
     plt.ylabel('Stalls')
-    plt.grid(True)
-    plt.savefig("../Figure/s_c.pdf",format="pdf")
+    plt.legend()
+    #plt.grid(True)
+    plt.savefig("Figure/s_c.pdf",format="pdf")
     plt.show()
 
-
-log_file_path = "logfile.log"
-cycles, stalls = read_log_file(log_file_path)
-plot_graph(cycles, stalls)
 
 def read_memory_patterns(file_path):
     with open(file_path, 'r') as file:
@@ -82,8 +76,9 @@ def read_memory_patterns(file_path):
 
     return instruction_memory, data_memory
 
-# Example usage
-log_file_path = "logfile.log"
+
+log_file_path = "logs/logfile.log"
+stalling(log_file_path)
 instruction_memory, data_memory = read_memory_patterns(log_file_path)
 
 # Plot Instruction Memory vs Cycle
@@ -94,7 +89,8 @@ plt.xlabel('Cycle')
 plt.ylabel('Memory Address')
 plt.legend()
 plt.grid(True)
-plt.savefig("../Figure/i_c.pdf",format="pdf")
+plt.savefig("Figure/i_c.pdf",format="pdf")
+#plt.savefig("Figure/i_c.png",format="png")
 plt.show()
 
 # Plot Data Memory vs Cycle
@@ -106,5 +102,6 @@ plt.xlabel('Cycle')
 plt.ylabel('Memory Address')
 plt.legend()
 plt.grid(True)
-plt.savefig("../Figure/d_c.pdf",format="pdf")
+plt.savefig("Figure/d_c.pdf",format="pdf")
+#plt.savefig("Figure/d_c.png",format="png")
 plt.show()
