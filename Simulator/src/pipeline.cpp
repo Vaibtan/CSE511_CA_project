@@ -22,6 +22,35 @@ u32 bypass_read(pipeline *pipe,struct d_unit *decode,bool isrs1){
     }
 }
 
+// Bypass vector's reading function
+void bypass_read_vec(pipeline *pipe,struct d_unit *decode,bool isrs1){
+    if(isrs1){
+        if(pipe->bypass->rde==decode->rs1){
+            for(int i=0;i<vector_size;i++){
+            pipe->execute->v1[i]=pipe->bypass->vec_ex[i];}
+        }
+        else if(pipe->bypass->rdm==decode->rs1){
+            for(int i=0;i<vector_size;i++){
+            pipe->execute->v1[i]=pipe->bypass->vec_mem[i];}
+        }
+        for(int i=0;i<vector_size;i++){
+            pipe->execute->v1[i]=pipe->decode->v1[i];
+        }
+    }
+    else{
+        if(pipe->bypass->rde==decode->rs2){
+            for(int i=0;i<vector_size;i++){
+            pipe->execute->v2[i]=pipe->bypass->vec_ex[i];}
+        }
+        else if(pipe->bypass->rdm==decode->rs2){
+            for(int i=0;i<vector_size;i++){
+            pipe->execute->v2[i]=pipe->bypass->vec_mem[i];}
+        }
+        for(int i=0;i<vector_size;i++){
+            pipe->execute->v2[i]=pipe->decode->v2[i];}
+    }
+}
+
 pipeline* pipe_init(){
     pipeline *pipe = (pipeline *)malloc(sizeof(pipeline));
     pipe->cycle = 0;
@@ -31,7 +60,6 @@ pipeline* pipe_init(){
     pipe->memory = (mem_unit *)malloc(sizeof(mem_unit));
     pipe->writeback = (wb_unit *)malloc(sizeof(wb_unit));
     pipe->bypass = (bypassreg *)malloc(sizeof(bypassreg));
-    pipe->data_stall_counter = 0;
     pipeline_reset(pipe);
     return pipe;
 }
@@ -66,6 +94,7 @@ void decode_reset(d_unit *decode){
     decode->isnoc=false;
     decode->isstype=false;
     decode->pcd=0;
+    decode->issimd=false;
 }
 
 void fetch_reset(f_unit *fetch){
@@ -90,9 +119,11 @@ void execute_reset(exec_unit *execute){
     execute->isnoc=false;
     execute->isstype=false;
     execute->pce=0;
+    execute->issimd=false;
 }
 
 void memory_reset(mem_unit *memory){
+    memory->inst = 0;
     memory->addr = 0;
     memory->size = 0;
     memory->value = 0;
@@ -104,13 +135,16 @@ void memory_reset(mem_unit *memory){
     memory->iswrite=false;
     memory->isnoc=false;
     memory->isstype=false;
+    memory->issimd=false;
 }
 
 void writeback_reset(wb_unit *writeback){
+    writeback->inst = 0;
     writeback->rd = 0;
     writeback->imm = 0;
     writeback->done=false;
     writeback->iswrite=false;
+    writeback->issimd=false;
 }
 
 void cycle_reset(pipeline *pipe){
@@ -132,7 +166,6 @@ void pipeline_reset(pipeline *pipe){
     pipe->newpc_offset2=4;
     pipe->de_stall=false;
     pipe->ex_stall=false;
-    pipe->data_stall_counter = 0;
 }
 
 void changef_to_d(pipeline *pipe){
@@ -151,9 +184,11 @@ void changef_to_d(pipeline *pipe){
     pipe->decode->done=false;
     pipe->decode->isstype=false;
     pipe->decode->pcd=pipe->fetch->pcf;
+    pipe->decode->issimd=false;
 }
 
 void changed_to_ex(pipeline *pipe){
+    pipe->execute->issimd=pipe->decode->issimd;
     pipe->execute->isstore = pipe->decode->isstore;
     pipe->execute->isload = pipe->decode->isload;
     pipe->execute->iswrite = pipe->decode->iswrite;
@@ -182,9 +217,12 @@ void changed_to_ex(pipeline *pipe){
     pipe->execute->usign = false;
     pipe->execute->done=false;
     pipe->execute->pce=pipe->decode->pcd;
+    bypass_read_vec(pipe,pipe->decode,true);
+    bypass_read_vec(pipe,pipe->decode,false);
 }
 
 void changeex_to_m(pipeline *pipe){
+    pipe->memory->inst = pipe->execute->inst;
     pipe->memory->rd =pipe->execute->rd;
     pipe->memory->usign = pipe->execute->usign;
     pipe->memory->size = pipe->execute->size;
@@ -203,16 +241,23 @@ void changeex_to_m(pipeline *pipe){
     else{
         pipe->memory->value = pipe->execute->result;
     }
+    pipe->memory->issimd = pipe->execute->issimd;
+    for(int i=0;i<vector_size;i++){
+        pipe->memory->vec_write[i]=pipe->execute->vec_write[i];
+    }
     pipe->memory->done = false;
-    pipe->memory->inst = pipe->execute->inst;
 }
 
 void changem_to_wb(pipeline *pipe){
+    pipe->writeback->inst = pipe->memory->inst;
     pipe->writeback->rd = pipe->memory->rd;
     pipe->writeback->imm = pipe->memory->value;
     pipe->writeback->iswrite = pipe->memory->iswrite;
     pipe->writeback->done = false;
-    pipe->writeback->inst = pipe->memory->inst;
+    pipe->writeback->issimd = pipe->memory->issimd;
+    for(int i=0;i<vector_size;i++){
+        pipe->writeback->vec_write[i]=pipe->memory->vec_write[i];
+    }
 }
 
 // reset the branch flags
@@ -252,7 +297,6 @@ void jump_withoutBYPASSING(pipeline*pipe){
 }
 
 void jump(pipeline*pipe,u32* pc){
-    // std::cout<<pipe->cycle<<'\n';
     if(pipe->isbranch){
         if(pipe->bypass->new_pc!=pipe->decode->pcd){
             decode_reset(pipe->decode);
@@ -283,17 +327,14 @@ void jump(pipeline*pipe,u32* pc){
 void stall_withoutBYPASSING(pipeline*pipe){
     if(pipe->execute->isstore && pipe->execute->rs!=34 && pipe->memory->rd!=34  && pipe->memory->rd==pipe->execute->rs){
         pipe->ex_stall=true;
-        pipe->data_stall_counter++;
     }
     else{
         pipe->ex_stall=false;
         if(!pipe->memory->isstype && pipe->memory->rd!=34 && ((pipe->decode->rs1!=34 && pipe->memory->rd==pipe->decode->rs1)||(pipe->decode->rs2!=34 && pipe->memory->rd==pipe->decode->rs2))){
             pipe->de_stall=true;
-            pipe->data_stall_counter++;
         }
         else if( !pipe->decode->isstore && !pipe->execute->isstype && pipe->execute->rd!=34 && ((pipe->decode->rs1!=34 && pipe->execute->rd==pipe->decode->rs1)||(pipe->decode->rs2!=34 && pipe->execute->rd==pipe->decode->rs2))){
             pipe->de_stall=true;
-            pipe->data_stall_counter++;
         }
         else
         pipe->de_stall=false;
@@ -301,13 +342,11 @@ void stall_withoutBYPASSING(pipeline*pipe){
 }
 
 void stall(pipeline*pipe){
-    if(pipe->execute->isload && pipe->execute->rd!=34 && ((pipe->decode->rs1 !=34 && pipe->execute->rd==pipe->decode->rs1)||( pipe->decode->rs2 && pipe->execute->rd==pipe->decode->rs2))){
+    if(pipe->execute->isload && pipe->execute->rd!=34 && ((pipe->decode->rs1 !=34 && pipe->execute->rd==pipe->decode->rs1)||( pipe->decode->rs2 && pipe->execute->rd==pipe->decode->rs2)))
         pipe->de_stall=true;
-        pipe->data_stall_counter++; }
     else
-{    pipe->de_stall=false;
+    pipe->de_stall=false;
     pipe->ex_stall=false;
-}
 }
 
 // state change functions
@@ -334,46 +373,3 @@ bool statechange(pipeline* pipe,u32* pc, bool over){
     pipe->cycle+=1;
     return notend;
 }
-
-
-// ignore (useless implementation) 
-//  //   ideal pipeline state change function Implementation 
-// void changestate(RISCV_cpu *cpu){
-    // cpu->__pipe->writeback->rd = cpu->__pipe->memory->rd;
-    // cpu->__pipe->writeback->imm = cpu->__pipe->memory->value;
-    // cpu->__pipe->memory->rd =cpu->__pipe->execute->rd;
-    // cpu->__pipe->memory->usign = cpu->__pipe->execute->usign;
-    // cpu->__pipe->memory->size = cpu->__pipe->execute->size;
-    // if(cpu->__pipe->isstore&0x4==0x4){
-    //     cpu->__pipe->memory->addr = cpu->__pipe->execute->result;
-    //     cpu->__pipe->memory->value = cpu->__pipe->execute->op2;
-    // }
-    // else if(cpu->__pipe->isload&0x4==0x4){
-    //     cpu->__pipe->memory->addr = cpu->__pipe->execute->result;
-    // }
-    // else{
-    //     cpu->__pipe->memory->value = cpu->__pipe->execute->result;
-    // }
-    // cpu->__pipe->execute->inst = cpu->__pipe->decode->inst;
-    // cpu->__pipe->execute->op1 = cpu->__pipe->decode->rs1_val;
-    // cpu->__pipe->execute->size = 0;
-    // cpu->__pipe->execute->usign = false;
-    // cpu->__pipe->execute->result = 0;
-    // if(cpu->__pipe->decode->rs2!=34){
-    //     cpu->__pipe->execute->op2 = cpu->__pipe->decode->rs2_val;
-    //     if(cpu->__pipe->decode->isimm){
-    //         cpu->__pipe->execute->rd = cpu->__pipe->decode->imm;
-    //     }
-    //     else{
-    //         cpu->__pipe->execute->rd = cpu->__pipe->decode->rd;
-    //     }
-    // }
-    // else{
-    //     cpu->__pipe->execute->op2 = cpu->__pipe->decode->imm;
-    //     cpu->__pipe->execute->rd = cpu->__pipe->decode->rd;
-    // }
-    // cpu->__pipe->decode->inst = cpu->__pipe->fetch->inst;
-    // cpu->__pipe->decode->isimm = true;
-    // cpu->__pipe->decode->rs2==34;
-    // cpu->__pipe->decode->rs1==34;
-// }
