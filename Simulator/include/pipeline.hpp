@@ -10,7 +10,8 @@ struct f_unit{
 };
 
 struct d_unit{
-    bool isnoc;// buffer
+    bool issimd; //simd instruction?
+    bool isnoc;// noc instruction?
     bool isstore;// ->
     bool isload; // ->
     bool iswrite;//  signals
@@ -25,10 +26,13 @@ struct d_unit{
     u32 rs2_val; //rs2 value
     bool done; //executed once?
     u32 pcd; // pc of decode stage 
+    u32 v1[vector_size];// vector 1
+    u32 v2[vector_size];// vector 2
 };
 
 struct exec_unit{
     bool isnoc;// buffer
+    bool issimd; //simd instruction?
     bool isstore;// ->
     bool isload; // ->
     bool iswrite;//  signals
@@ -43,10 +47,15 @@ struct exec_unit{
     bool done; //executed once?
     u32 rs; //rs for store
     u32 pce; // pc of exec stage
+    u32 vec_write[vector_size];// vector to be written
+    u32 v1[vector_size];// vector 1
+    u32 v2[vector_size];// vector 2
 };
 
 struct mem_unit{
+    u8 inst; //insttype
     bool isnoc;// signals for mem_map_registers
+    bool issimd; //simd instruction?
     bool isstore; //signals store & 
     bool isload; // load
     bool iswrite; // buffer signal
@@ -57,14 +66,16 @@ struct mem_unit{
     u32 rd; //buffer for rd
     bool usign; //unsigned
     bool done; //executed once?
-    u8 inst; //insttype
+    u32 vec_write[vector_size];// vector to be written
 };
 struct wb_unit{
+    u8 inst; //insttype
+    bool issimd; //simd instruction?
     bool iswrite;//signal(write to regfile)
     u32 rd; //reg to write
     u32 imm;  // value to write
     bool done; //executed once?
-    u8 inst; //insttype
+    u32 vec_write[vector_size];// vector to be written
 };
 
 struct bypassreg{
@@ -73,6 +84,8 @@ struct bypassreg{
     u32 rde; // register for execute
     u32 rdm; // register fof memory
     u32 new_pc; //new pc 
+    u32 vec_ex[vector_size];// vector from exec
+    u32 vec_mem[vector_size];// vector from memory
 };
 
 struct pipeline{
@@ -90,7 +103,6 @@ struct pipeline{
     struct bypassreg* bypass; //bypass register 
     bool de_stall; //stall decode?
     bool ex_stall; //stall execute?
-    int data_stall_counter;
 };
 
 
