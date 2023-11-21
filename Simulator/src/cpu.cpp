@@ -1,5 +1,4 @@
 #include "cpu.hpp"
-#include <cstdio>
 
 //PC reset and initialisation
 void CPU_reset(RISCV_cpu *cpu) {
@@ -12,6 +11,10 @@ void CPU_reset(RISCV_cpu *cpu) {
     }
     pipeline_reset(cpu->__pipe);
     cpu->__alu->flag_reset();
+    cpu->register_instr_counter=0;
+    cpu->memory_instr_counter=0;
+    cpu->noc_type_instr=0;
+    cpu->simd_type_instr=0;
 }
 
 // cpu initialization
@@ -42,6 +45,7 @@ RISCV_cpu* CPU_init() {
     CPU_reset(cpu);
     return cpu;
 }
+
 
 //PC write function
 void fetch_pc_update(RISCV_cpu*cpu,u32 pc_new){
@@ -147,30 +151,34 @@ void cpu_control_unit(RISCV_cpu *cpu,pipeline *pipe,u32 inst) {
     int funct7 = (inst >> 25) & 0x7f;   // funct7 in bits 31..25
     switch (pipe->decode->inst){
         case RV32i_LUI:
+            cpu->register_instr_counter++;
             pipe->decode->inst=1;
             pipe->decode->rd=rd(inst);
             pipe->decode->imm=(i32)(inst & 0xfffff000);
             pipe->decode->iswrite=true;
-            cpu->register_instr_counter++;
+            // LUI_exe(cpu, inst);
             break;
         case RV32i_AUIPC:
+            cpu->register_instr_counter++;
             pipe->decode->inst=2; 
             pipe->decode->rd=rd(inst);
             pipe->decode->imm= imm_U_TYPE(inst);
             pipe->decode->iswrite=true;
-            cpu->register_instr_counter++; 
+            // AUIPC_exe(cpu, inst); 
             break;
 
         case RV32i_JAL:
+            cpu->register_instr_counter++;
             pipe->decode->inst=3; 
             pipe->isbranch2=true;
             pipe->newpc_offset2= imm_UJ_TYPE(inst);
             pipe->decode->rd=rd(inst);
             pipe->decode->iswrite=true;
             pipe->decode->imm=pipe->decode->pcd;
-            cpu->register_instr_counter++;
+            // JAL_exe(cpu, inst);
             break;
         case RV32i_JALR:
+            cpu->register_instr_counter++;
             pipe->decode->inst=4; 
             pipe->decode->rd=rd(inst);
             pipe->decode->rs1=rs1(inst);
@@ -180,10 +188,11 @@ void cpu_control_unit(RISCV_cpu *cpu,pipeline *pipe,u32 inst) {
             pipe->isbranch2=true;
             pipe->decode->imm=pipe->decode->pcd;
             pipe->isjalr=true;
-            cpu->register_instr_counter++;
+            // JALR_exe(cpu, inst);
             break;
 
         case RV32i_SB_TYPE:
+            cpu->register_instr_counter++;
             pipe->decode->isstype=true;
             switch (funct3) {
                 case BEQ:
@@ -191,42 +200,42 @@ void cpu_control_unit(RISCV_cpu *cpu,pipeline *pipe,u32 inst) {
                     pipe->decode->rs1=rs1(inst);
                     pipe->decode->rs2=rs2(inst);
                     pipe->decode->imm= imm_SB_TYPE(inst);   
-                    cpu->register_instr_counter++; 
+                    // BEQ_exe(cpu, inst); 
                     break;
                 case BNE:
                     pipe->decode->inst=6; 
                     pipe->decode->rs1=rs1(inst);
                     pipe->decode->rs2=rs2(inst);
                     pipe->decode->imm= imm_SB_TYPE(inst);     
-                    cpu->register_instr_counter++;
+                    // BNE_exe(cpu, inst); 
                     break;
                 case BLT:
                     pipe->decode->inst=7; 
                     pipe->decode->rs1=rs1(inst);
                     pipe->decode->rs2=rs2(inst);
                     pipe->decode->imm= imm_SB_TYPE(inst);   
-                    cpu->register_instr_counter++; 
+                    // BLT_exe(cpu, inst); 
                     break;
                 case BGE:
                     pipe->decode->inst=8;
                     pipe->decode->rs1=rs1(inst);
                     pipe->decode->rs2=rs2(inst);
                     pipe->decode->imm= imm_SB_TYPE(inst);    
-                    cpu->register_instr_counter++; 
+                    // BGE_exe(cpu, inst); 
                     break;
                 case BLTU:  
                     pipe->decode->inst=9;
                     pipe->decode->rs1=rs1(inst);
                     pipe->decode->rs2=rs2(inst);
                     pipe->decode->imm= imm_SB_TYPE(inst); 
-                    cpu->register_instr_counter++; 
+                    // BLTU_exe(cpu, inst); 
                     break;
                 case BGEU:
                     pipe->decode->inst=10;
                     pipe->decode->rs1=rs1(inst);
                     pipe->decode->rs2=rs2(inst);
                     pipe->decode->imm= imm_SB_TYPE(inst);  
-                    cpu->register_instr_counter++; 
+                    // BGEU_exe(cpu, inst); 
                     break;
                 default:
                     fprintf(stderr, 
@@ -237,6 +246,7 @@ void cpu_control_unit(RISCV_cpu *cpu,pipeline *pipe,u32 inst) {
             break;
 
         case RV32i_LOAD:
+            cpu->memory_instr_counter++;
             pipe->decode->isload=true;
             pipe->decode->iswrite=true;
             switch (funct3) {
@@ -245,35 +255,35 @@ void cpu_control_unit(RISCV_cpu *cpu,pipeline *pipe,u32 inst) {
                     pipe->decode->rd=rd(inst);
                     pipe->decode->rs1=rs1(inst);
                     pipe->decode->imm= imm_I_TYPE(inst);
-                    cpu->memory_instr_counter++;
+                    // LB_exe(cpu, inst);
                     break;  
                 case LH  :  
                     pipe->decode->inst=12;
                     pipe->decode->rd=rd(inst);
                     pipe->decode->rs1=rs1(inst);
                     pipe->decode->imm= imm_I_TYPE(inst); 
-                    cpu->memory_instr_counter++;
+                    // LH_exe(cpu, inst);
                     break;  
                 case LW  :  
                     pipe->decode->inst=13;
                     pipe->decode->rd=rd(inst);
                     pipe->decode->rs1=rs1(inst);
                     pipe->decode->imm= imm_I_TYPE(inst); 
-                    cpu->memory_instr_counter++;
+                    // LW_exe(cpu, inst);
                     break;
                 case LBU  :  
                     pipe->decode->inst=14;
                     pipe->decode->rd=rd(inst);
                     pipe->decode->rs1=rs1(inst);
                     pipe->decode->imm= imm_I_TYPE(inst); 
-                    cpu->memory_instr_counter++;
+                    // LW_exe(cpu, inst);
                     break;    
                 case LHU :  
                     pipe->decode->inst=15;
                     pipe->decode->rd=rd(inst);
                     pipe->decode->rs1=rs1(inst);
                     pipe->decode->imm= imm_I_TYPE(inst); 
-                    cpu->memory_instr_counter++;
+                    // LHU_exe(cpu, inst); 
                     break; 
                 default:
                     fprintf(stderr, 
@@ -284,6 +294,7 @@ void cpu_control_unit(RISCV_cpu *cpu,pipeline *pipe,u32 inst) {
             break;
 
         case RV32i_S_TYPE:
+            cpu->memory_instr_counter++;
             pipe->decode->isstype=true;
             pipe->decode->isstore=true;
             switch (funct3) {
@@ -292,21 +303,21 @@ void cpu_control_unit(RISCV_cpu *cpu,pipeline *pipe,u32 inst) {
                     pipe->decode->rs1=rs1(inst);
                     pipe->decode->rs2=rs2(inst);
                     pipe->decode->imm= imm_S_TYPE(inst);
-                    cpu->memory_instr_counter++;
+                    // SB_exe(cpu, inst);
                     break;  
                 case SH  :
                     pipe->decode->inst=17;
                     pipe->decode->rs1=rs1(inst);
                     pipe->decode->rs2=rs2(inst);
                     pipe->decode->imm= imm_S_TYPE(inst);  
-                    cpu->memory_instr_counter++;
+                    // SH_exe(cpu, inst);
                     break;  
                 case SW  : 
                     pipe->decode->inst=18;
                     pipe->decode->rs1=rs1(inst);
                     pipe->decode->rs2=rs2(inst);
                     pipe->decode->imm= imm_S_TYPE(inst);
-                    cpu->memory_instr_counter++;
+                    // SW_exe(cpu, inst);
                     break;   
                 default:
                     fprintf(stderr, 
@@ -318,41 +329,42 @@ void cpu_control_unit(RISCV_cpu *cpu,pipeline *pipe,u32 inst) {
 
         case RV32i_I_TYPE:
             pipe->decode->iswrite=true;
+            cpu->register_instr_counter++;
             switch (funct3) {
                 case ADDI: 
                     pipe->decode->inst=19;
                     pipe->decode->rd=rd(inst);
                     pipe->decode->rs1=rs1(inst);
                     pipe->decode->imm= imm_I_TYPE(inst);
-                    cpu->register_instr_counter++;
+                    // ADDI_exe(cpu, inst);
                     break;
                 case SLLI:
                     pipe->decode->inst=25;
                     pipe->decode->rd=rd(inst);
                     pipe->decode->rs1=rs1(inst);
                     pipe->decode->imm= shamt(inst);
-                    cpu->register_instr_counter++;
+                    // SLLI_exe(cpu, inst);
                     break;
                 case SLTI:
                     pipe->decode->inst=20;
                     pipe->decode->rd=rd(inst);
                     pipe->decode->rs1=rs1(inst);
                     pipe->decode->imm= imm_I_TYPE(inst);  
-                    cpu->register_instr_counter++;
+                    // SLTI_exe(cpu, inst);
                     break;
                 case SLTIU:
                     pipe->decode->inst=21;
                     pipe->decode->rd=rd(inst);
                     pipe->decode->rs1=rs1(inst);
                     pipe->decode->imm= imm_I_TYPE(inst);
-                    cpu->register_instr_counter++;
+                    // SLTIU_exe(cpu, inst);
                     break;
                 case XORI: 
                     pipe->decode->inst=22;
                     pipe->decode->rd=rd(inst);
                     pipe->decode->rs1=rs1(inst);
                     pipe->decode->imm= imm_I_TYPE(inst);
-                    cpu->register_instr_counter++;
+                    // XORI_exe(cpu, inst);
                     break;
                 case SRI:   
                     switch (funct7) {
@@ -361,14 +373,14 @@ void cpu_control_unit(RISCV_cpu *cpu,pipeline *pipe,u32 inst) {
                             pipe->decode->rd=rd(inst);
                             pipe->decode->rs1=rs1(inst);
                             pipe->decode->imm= shamt(inst);
-                            cpu->register_instr_counter++;
+                            // SRLI_exe(cpu, inst);
                             break;
                         case SRAI: 
                             pipe->decode->inst=27;
                             pipe->decode->rd=rd(inst);
                             pipe->decode->rs1=rs1(inst);
                             pipe->decode->imm= shamt(inst);
-                            cpu->register_instr_counter++;
+                            // SRAI_exe(cpu, inst);
                             break;
                         default:
                             fprintf(stderr, 
@@ -382,14 +394,14 @@ void cpu_control_unit(RISCV_cpu *cpu,pipeline *pipe,u32 inst) {
                     pipe->decode->rd=rd(inst);
                     pipe->decode->rs1=rs1(inst);
                     pipe->decode->imm= imm_I_TYPE(inst);   
-                    cpu->register_instr_counter++;
+                    // ORI_exe(cpu, inst);
                     break;
                 case ANDI:
                     pipe->decode->inst=24;
                     pipe->decode->rd=rd(inst);
                     pipe->decode->rs1=rs1(inst);
                     pipe->decode->imm= imm_I_TYPE(inst);  
-                    cpu->register_instr_counter++;
+                    // ANDI_exe(cpu, inst); 
                     break;
                 default:
                     fprintf(stderr, 
@@ -401,7 +413,8 @@ void cpu_control_unit(RISCV_cpu *cpu,pipeline *pipe,u32 inst) {
 
         case RV32i_R_TYPE:
             pipe->decode->isimm=false;
-            pipe->decode->iswrite=true;   
+            pipe->decode->iswrite=true;
+            cpu->register_instr_counter++;   
             switch (funct3) {
                 case ADDSUB:
                     switch (funct7) {
@@ -410,14 +423,14 @@ void cpu_control_unit(RISCV_cpu *cpu,pipeline *pipe,u32 inst) {
                             pipe->decode->rd=rd(inst);
                             pipe->decode->rs1=rs1(inst);
                             pipe->decode->rs2=rs2(inst);
-                            cpu->register_instr_counter++;
+                            // ADD_exe(cpu, inst);
                             break;
                         case SUB:
                             pipe->decode->inst=29;
                             pipe->decode->rd=rd(inst);
                             pipe->decode->rs1=rs1(inst);
                             pipe->decode->rs2=rs2(inst);
-                            cpu->register_instr_counter++;
+                            // SUB_exe(cpu, inst);
                             break;
                         default:
                             fprintf(stderr, 
@@ -432,28 +445,28 @@ void cpu_control_unit(RISCV_cpu *cpu,pipeline *pipe,u32 inst) {
                     pipe->decode->rs1=rs1(inst);
                     pipe->decode->rs2=rs2(inst);
 
-                    cpu->register_instr_counter++;
+                    // SLL_exe(cpu, inst);
                     break;
                 case SLT:
                     pipe->decode->inst=31;
                     pipe->decode->rd=rd(inst);
                     pipe->decode->rs1=rs1(inst);
                     pipe->decode->rs2=rs2(inst);  
-                    cpu->register_instr_counter++;
+                    // SLT_exe(cpu, inst); 
                     break;
                 case SLTU: 
                     pipe->decode->inst=32;
                     pipe->decode->rd=rd(inst);
                     pipe->decode->rs1=rs1(inst);
                     pipe->decode->rs2=rs2(inst);
-                    cpu->register_instr_counter++;
+                    // SLTU_exe(cpu, inst); 
                     break;
                 case XOR:
                     pipe->decode->inst=33;
                     pipe->decode->rd=rd(inst);
                     pipe->decode->rs1=rs1(inst);
                     pipe->decode->rs2=rs2(inst);  
-                    cpu->register_instr_counter++;
+                    // XOR_exe(cpu, inst); 
                     break;
                 case SR:   
                     switch (funct7) {
@@ -462,14 +475,14 @@ void cpu_control_unit(RISCV_cpu *cpu,pipeline *pipe,u32 inst) {
                             pipe->decode->rd=rd(inst);
                             pipe->decode->rs1=rs1(inst);
                             pipe->decode->rs2=rs2(inst);  
-                            cpu->register_instr_counter++;
+                            // SRL_exe(cpu, inst); 
                             break;
                         case SRA: 
                             pipe->decode->inst=35;
                             pipe->decode->rd=rd(inst);
                             pipe->decode->rs1=rs1(inst);
                             pipe->decode->rs2=rs2(inst);
-                            cpu->register_instr_counter++;
+                            // SRA_exe(cpu, inst); 
                             break;
                         default:
                             fprintf(stderr, 
@@ -483,14 +496,14 @@ void cpu_control_unit(RISCV_cpu *cpu,pipeline *pipe,u32 inst) {
                     pipe->decode->rd=rd(inst);
                     pipe->decode->rs1=rs1(inst);
                     pipe->decode->rs2=rs2(inst);   
-                    cpu->register_instr_counter++;
+                    // OR_exe(cpu, inst); 
                     break;
                 case AND:
                     pipe->decode->inst=37;
                     pipe->decode->rd=rd(inst);
                     pipe->decode->rs1=rs1(inst);
                     pipe->decode->rs2=rs2(inst);  
-                    cpu->register_instr_counter++;
+                    // AND_exe(cpu, inst);
                     break;
                 default:
                     fprintf(stderr, 
@@ -504,6 +517,7 @@ void cpu_control_unit(RISCV_cpu *cpu,pipeline *pipe,u32 inst) {
             pipe->decode->inst=0;
             break;
         case LD_ST_NOC:
+            cpu->noc_type_instr++;
             pipe->decode->isnoc=true;
             pipe->decode->isstore=true;
             switch (funct3) {
@@ -512,12 +526,10 @@ void cpu_control_unit(RISCV_cpu *cpu,pipeline *pipe,u32 inst) {
                     pipe->decode->rs2=rs2(inst);
                     pipe->decode->rs1=rs1(inst);
                     pipe->decode->imm= imm_S_TYPE(inst);
-                    cpu->memory_instr_counter++;
                     break;
                 case STORENOC:
                     pipe->decode->inst=39;
                     pipe->decode->imm= 1;
-                    cpu->memory_instr_counter++;
                     break;
                 default:
                     fprintf(stderr, 
@@ -525,6 +537,26 @@ void cpu_control_unit(RISCV_cpu *cpu,pipeline *pipe,u32 inst) {
                             , pipe->decode->inst, funct3, funct7);
                     exit(1);
             }
+            break;
+        case ADDSIMD:
+            cpu->simd_type_instr++;
+            pipe->decode->inst=40;
+            pipe->decode->issimd=true;
+            pipe->decode->isimm=false;
+            pipe->decode->iswrite=true;
+            pipe->decode->rd=rd(inst);
+            pipe->decode->rs1=rs1(inst);
+            pipe->decode->rs2=rs2(inst);
+            break;
+        case SUBSIMD:
+            cpu->simd_type_instr++;
+            pipe->decode->inst=41;
+            pipe->decode->issimd=true;
+            pipe->decode->isimm=false;
+            pipe->decode->iswrite=true;
+            pipe->decode->rd=rd(inst);
+            pipe->decode->rs1=rs1(inst);
+            pipe->decode->rs2=rs2(inst);
             break;
         default:
             fprintf(stderr, 
@@ -540,11 +572,20 @@ void cpu_decode(RISCV_cpu *cpu){
     cpu_control_unit(cpu,cpu->__pipe,cpu->__pipe->decode->inst);
 
     // Reading from reg file:
-    if(cpu->__pipe->decode->rs1!=34){
-        cpu->__pipe->decode->rs1_val=cpu_read_reg(cpu,cpu->__pipe->decode->rs1);
+    if(cpu->__pipe->decode->issimd!=true){
+        if(cpu->__pipe->decode->rs1!=34){
+            cpu->__pipe->decode->rs1_val=cpu_read_reg(cpu,cpu->__pipe->decode->rs1);
+        }
+        if(cpu->__pipe->decode->rs2!=34){
+            cpu->__pipe->decode->rs2_val=cpu_read_reg(cpu,cpu->__pipe->decode->rs2);
+        }
     }
-    if(cpu->__pipe->decode->rs2!=34){
-        cpu->__pipe->decode->rs2_val=cpu_read_reg(cpu,cpu->__pipe->decode->rs2);
+    else{
+        for(int i =0 ;i<vector_size;i++){
+            cpu->__pipe->decode->v1[i]=cpu->vec[cpu->__pipe->decode->rs1][i];
+            cpu->__pipe->decode->v2[i]=cpu->vec[cpu->__pipe->decode->rs2][i];
+        }
+        
     }
     cpu->__pipe->decode->done=true;
 }
@@ -744,6 +785,20 @@ void cpu_execute(RISCV_cpu *cpu){
             cpu->__pipe->execute->size=32;
             cpu->__pipe->execute->rd=34;
             break;
+        case 40:
+            if(cpu->__pipe->execute->issimd){
+                for(int i=0;i<vector_size;i++){
+                    cpu->__pipe->execute->vec_write[i]=cpu->__alu->add(cpu->__pipe->execute->v1[i],cpu->__pipe->execute->v2[i]);
+                }
+            }
+            break;
+        case 41:
+            if(cpu->__pipe->execute->issimd){
+                for(int i=0;i<vector_size;i++){
+                    cpu->__pipe->execute->vec_write[i]=cpu->__alu->sub(cpu->__pipe->execute->v1[i],cpu->__pipe->execute->v2[i]);
+                }
+            }
+            break;
         default:
         fprintf(stderr, 
                 "[-] ERROR-> inst%d\n"
@@ -754,6 +809,11 @@ void cpu_execute(RISCV_cpu *cpu){
     cpu->__pipe->bypass->res_exec = cpu->__pipe->execute->result;
     cpu->__pipe->bypass->rde = cpu->__pipe->execute->rd;
     cpu->__pipe->execute->done=true;
+    if(cpu->__pipe->execute->issimd){
+        for(int i=0;i<vector_size;i++){
+            cpu->__pipe->bypass->vec_ex[i]==cpu->__pipe->execute->vec_write[i];
+        }
+    }
 }
 
 //Helper Function for load and store
@@ -802,7 +862,13 @@ void cpu_memory(RISCV_cpu *cpu){
 void cpu_writeback(RISCV_cpu*cpu){
     if(cpu->__pipe->writeback->done)return;
     if(cpu->__pipe->writeback->iswrite){
-        cpu->x[cpu->__pipe->writeback->rd]=cpu->__pipe->writeback->imm;
+        if(cpu->__pipe->writeback->issimd){
+            for(int i=0;i<vector_size;i++){
+                cpu->vec[cpu->__pipe->writeback->rd][i]=cpu->__pipe->writeback->vec_write[i];
+            }
+        }
+        else{
+        cpu->x[cpu->__pipe->writeback->rd]=cpu->__pipe->writeback->imm;}
     }
     cpu->__pipe->writeback->done=true;
     if(cpu->__pipe->ex_stall){
@@ -817,4 +883,3 @@ void cpu_writeback(RISCV_cpu*cpu){
         }
     }
 }
-
