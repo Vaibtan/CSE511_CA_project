@@ -52,8 +52,8 @@ cache_bus_data* d_cache_bus_init(MEM_BUS *__bus){
 u32 d_cache_ld(DATA_CACHE_BUS* d_cache_bus, u32 addr, u32 size) {
     string ADDR_str = val_to_bin(addr, 32);
     u32 off = bin_to_val(ADDR_str.substr(27, 5));
-	u32 set_ADDR = bin_to_val(ADDR_str.substr(25, 2));
-	u32 byte_ADDR = bin_to_val(ADDR_str.substr(0, 25));	    
+    u32 set_ADDR = bin_to_val(ADDR_str.substr(25, 2));
+    u32 byte_ADDR = bin_to_val(ADDR_str.substr(0, 25));	    
     u32 _val = d_cache_bus->data_cache->cache_read(byte_ADDR, set_ADDR, off);
     //CACHE_MISS
     if(_val == -1){ _val = data_bus_ld(d_cache_bus->data_cache->_bus->data_bus, addr, size); } 
@@ -63,28 +63,30 @@ u32 d_cache_ld(DATA_CACHE_BUS* d_cache_bus, u32 addr, u32 size) {
 void d_cache_st(DATA_CACHE_BUS* d_cache_bus, u32 addr, u32 size, u32 _val){
     string ADDR_str = val_to_bin(addr, 32);
     u32 off = bin_to_val(ADDR_str.substr(27, 5));
-	u32 set_ADDR = bin_to_val(ADDR_str.substr(25, 2));
-	u32 byte_ADDR = bin_to_val(ADDR_str.substr(0, 25));  
-	d_cache_bus->data_cache->cache_write(byte_ADDR, set_ADDR, off, _val);
+    u32 set_ADDR = bin_to_val(ADDR_str.substr(25, 2));
+    u32 byte_ADDR = bin_to_val(ADDR_str.substr(0, 25));  
+    d_cache_bus->data_cache->cache_write(byte_ADDR, set_ADDR, off, _val);
+    data_bus_st(d_cache_bus->data_cache->_bus->data_bus, addr, size,_val);
 }
 
 u32 i_cache_ld(INSTR_CACHE_BUS* i_cache_bus, u32 addr, u32 size){
     string ADDR_str = val_to_bin(addr, 32);
     u32 off = bin_to_val(ADDR_str.substr(27, 5));
-	u32 set_ADDR = bin_to_val(ADDR_str.substr(25, 2));
-	u32 byte_ADDR = bin_to_val(ADDR_str.substr(0, 25));	    
+    u32 set_ADDR = bin_to_val(ADDR_str.substr(25, 2));
+    u32 byte_ADDR = bin_to_val(ADDR_str.substr(0, 25));	    
     u32 _val = i_cache_bus->instr_cache->cache_read(byte_ADDR, set_ADDR, off);
     //CACHE_MISS
-    if(_val == -1){ _val = data_bus_ld(i_cache_bus->instr_cache->_bus->data_bus, addr, size); } 
+    if(_val == -1){ _val = data_bus_ld(i_cache_bus->instr_cache->_bus->instr_bus, addr, size); } 
     return _val;
 }
 
 void i_cache_st(INSTR_CACHE_BUS* i_cache_bus, u32 addr, u32 size, u32 _val){
     string ADDR_str = val_to_bin(addr, 32);
     u32 off = bin_to_val(ADDR_str.substr(27, 5));
-	u32 set_ADDR = bin_to_val(ADDR_str.substr(25, 2));
-	u32 byte_ADDR = bin_to_val(ADDR_str.substr(0, 25));  
-	i_cache_bus->instr_cache->cache_write(byte_ADDR, set_ADDR, off, _val);
+    u32 set_ADDR = bin_to_val(ADDR_str.substr(25, 2));
+    u32 byte_ADDR = bin_to_val(ADDR_str.substr(0, 25));  
+    i_cache_bus->instr_cache->cache_write(byte_ADDR, set_ADDR, off, _val);
+    instr_bus_st(i_cache_bus->instr_cache->_bus->instr_bus, addr, size,_val);
 }
 
 
