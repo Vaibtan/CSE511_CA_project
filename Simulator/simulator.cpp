@@ -51,6 +51,7 @@ u32 load_Instrucctions_in_memory(RISCV_cpu* cpu,char* path){
     while(fread(&INST,sizeof(u32),1,fp)){
         i_cache_st(cpu->__bus->i_cache_bus,INST_END, 32, INST);
         INST_END+=4;
+        printf("0x%x, 0x%x\n",i_cache_ld(cpu->__bus->i_cache_bus,INST_END, 32),INST);
     }
     fclose(fp);
     // To debug ld and store
