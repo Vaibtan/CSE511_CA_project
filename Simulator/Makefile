@@ -31,3 +31,4 @@ all:
 clean:
 	rm -f $(MAIN_DIR)/$(APP_NAME)
 	rm -f ../logs/logfile.log
+	rm -f ../logs/log_cache.log
