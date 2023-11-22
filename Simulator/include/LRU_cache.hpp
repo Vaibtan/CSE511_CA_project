@@ -39,7 +39,7 @@ public:
     //set_addr = bin_to_val(ADDR_STR.substr(32 - __lg(blk_SZ) - __lg(c_l / assoc), __lg(c_l / assoc)));
     //byte_addr = bin_to_val(ADDR_STR.substr(0, 32 - __lg(blk_SZ) - __lg(c_l / assoc)));
     void cache_write(u32 byte_ADDR, u32 set_ADDR, u32 off, u32 _val);
-    void __print__();
+    void __print__(FILE *fp);
 };
 
 #endif
