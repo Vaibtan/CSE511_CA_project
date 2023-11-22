@@ -114,19 +114,20 @@ void set_associative::cache_write(u32 byte_ADDR, u32 set_ADDR, u32 off, u32 _val
     }
 }
     
-void set_associative::__print__() {
+void set_associative::__print__(FILE* fp) {
 	REP(_z, 0, cache_line) {
 	    if (empty[_z]) {
-		    cout << "##EMPTY##" << endl;
+		    fprintf(fp,"##EMPTY##\n");
 		    continue;
 	    }
 	
-	    if (_z % assoc == 0) { cout << endl; }
+	    if (_z % assoc == 0) { fprintf(fp,"\n"); }
 		// differentiate between sets
-	    cout << "##BLOCK## " << val_to_bin(tag[_z], 32 - __lg(blk_SZ) - __lg(cache_line / assoc)) << " ##DATA## : ";
-	    
-	    REP(_j, 0, blk_SZ) { cout << data[_z / assoc][_z % assoc][_j] << " "; }
-	    cout << endl;
+		fprintf(fp,"##BLOCK## ");
+		fprintf(fp,"%s",val_to_bin(tag[_z], 32 - __lg(blk_SZ) - __lg(cache_line / assoc)).c_str());
+	    fprintf(fp," ##DATA## : ");
+	    REP(_j, 0, blk_SZ) { fprintf(fp,"0x%x ",data[_z / assoc][_z % assoc][_j]); }
+		fprintf(fp,"\n");
 	}
 }
 /**
